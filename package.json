@@ -1,0 +1,24 @@
+{
+  "name": "groupamania-api",
+  "version": "1.0.0",
+  "description": "API for the Groupomania Web Application",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "doc": "npx oas generate groupomania-openapi-base.json -v > groupomania-openapi-doc.json"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/roy-raphael/DW_P7-Groupomania-back.git"
+  },
+  "author": "Raphael Roy",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/roy-raphael/DW_P7-Groupomania-back/issues"
+  },
+  "homepage": "https://github.com/roy-raphael/DW_P7-Groupomania-back#readme",
+  "dependencies": {
+    "express": "^4.18.1"
+  }
+}
