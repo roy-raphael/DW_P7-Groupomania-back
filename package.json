@@ -5,6 +5,9 @@
   "main": "server.js",
   "type": "module",
   "scripts": {
+    "migrate": "npx prisma migrate dev --name ",
+    "pm_editor": "npx prisma studio",
+    "pm_format": "npx prisma format",
     "test": "echo \"Error: no test specified\" && exit 1",
     "doc": "npx oas generate groupomania-openapi-base.json -v > groupomania-openapi-doc.json"
   },
@@ -19,6 +22,8 @@
   },
   "homepage": "https://github.com/roy-raphael/DW_P7-Groupomania-back#readme",
   "dependencies": {
-    "express": "^4.18.1"
+    "@prisma/client": "^4.1.1",
+    "express": "^4.18.1",
+    "prisma": "^4.1.1"
   }
 }
