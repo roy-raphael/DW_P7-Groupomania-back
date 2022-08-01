@@ -1,5 +1,6 @@
 import express from 'express';
 import helmet from 'helmet';
+import userRoutes from './routes/user.js';
 
 const app = express();
 
@@ -14,6 +15,8 @@ app.use((req, res, next) => {
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
     next();
 });
+
+app.use('/api/auth', userRoutes);
 
 process.on('SIGTERM', () => {
     server.close(() => {
