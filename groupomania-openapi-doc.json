@@ -1,0 +1,793 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "version": "1.0.0",
+    "title": "groupomania-api",
+    "description": "",
+    "license": {
+      "name": "ISC"
+    }
+  },
+  "tags": [
+    {
+      "name": "auth",
+      "description": "Everything about the authenthication"
+    },
+    {
+      "name": "posts",
+      "description": "Everything about the posts"
+    }
+  ],
+  "servers": [
+    {
+      "url": "http://localhost:3000"
+    }
+  ],
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "paths": {
+    "/api/auth/login": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Connexion of a user",
+        "description": "Check of the user identification informations, return the id of the user from the database and a signed JSON web token (containing the id of the user). The number of (failed) attempts to connect for a user is limited (in the time as well).\n",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/user"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "userId": {
+                      "type": "string",
+                      "description": "ID de l'utilisateur (depuis la base de données)"
+                    },
+                    "token": {
+                      "type": "string",
+                      "description": "token web JSON signé (contenant également l'ID de l'utilisateur)"
+                    }
+                  }
+                },
+                "example": {
+                  "userId": "e5268c386c9b17c39bd6a17d",
+                  "token": "..."
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/errorMessage"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/errorMessage"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/errorMessage"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/signup": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Creation of a new user",
+        "description": "Hash the user password and add the user to the database",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/user"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string",
+                  "description": "User creation message"
+                },
+                "example": "User created"
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/errorMessage"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/errorMessage"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/posts": {
+      "get": {
+        "tags": [
+          "posts"
+        ],
+        "summary": "Find all posts",
+        "description": "Returns an array of all the posts in the database",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/post"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/errorMessage"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/errorMessage"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "posts"
+        ],
+        "summary": "Creation of a new post",
+        "description": "Creates a post with a text and with or without an image (and with empty likes and dislikes arrays). If an image is uploaded, it is captured, and the imageUrl of the post is initialized. If no file is submitted, the informations of the post are in the root of the request body. If a file is submitted, the post (string) is in req.body.post The initial request body is empty ; multer returns a string for the request body with the data submitted with the file.\n",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/post-form"
+              },
+              "example": {
+                "text": "This is a post text",
+                "authorId": "e5268c386c9b17c39bd6a17d"
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "post": {
+                    "$ref": "#/components/schemas/post-form"
+                  },
+                  "file": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "image to upload"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string",
+                  "description": "Post creation message"
+                },
+                "example": "Post created"
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/errorMessage"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/errorMessage"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Unsupported Media Type",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/errorMessage"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/posts/{id}": {
+      "get": {
+        "tags": [
+          "posts"
+        ],
+        "summary": "Finds a post by ID",
+        "description": "Returns the post with the given id",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/postIdParam"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/post"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/errorMessage"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/errorMessage"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "posts"
+        ],
+        "summary": "Modification of a post",
+        "description": "Update the post with the id submitted. If an image is uploaded, it is captured, and the imageUrl of the post is updated. If no file is submitted, the informations of the post are in the root of the request body. If a file is submitted, the post (string) is in req.body.post The initial request body is empty ; multer returns a string for the request body with the data submitted with the file.\n",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/postIdParam"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/post-form"
+              },
+              "example": {
+                "text": "This is an updated post text",
+                "authorId": "e5268c386c9b17c39bd6a17d"
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "post": {
+                    "$ref": "#/components/schemas/post-form"
+                  },
+                  "file": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "image to upload"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string",
+                  "description": "Post modification message"
+                },
+                "example": "Post updated"
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/errorMessage"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/errorMessage"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/errorMessage"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/errorMessage"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Unsupported Media Type",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/errorMessage"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "posts"
+        ],
+        "summary": "Deletion of a post",
+        "description": "Delete the post with the given id",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/postIdParam"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string",
+                  "description": "Post deletion message"
+                },
+                "example": "Post deleted"
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/errorMessage"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/errorMessage"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/errorMessage"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/posts/{id}/comment": {
+      "post": {
+        "tags": [
+          "posts"
+        ],
+        "summary": "Creation of a new comment to an existing post",
+        "description": "Creates a comment (text) relative to a post (with the comment's authors' ID)\n",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/postIdParam"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "text": {
+                    "type": "string",
+                    "description": "Text content of the comment"
+                  },
+                  "authorId": {
+                    "type": "string",
+                    "description": "ID of the author of the comment"
+                  }
+                }
+              },
+              "example": {
+                "text": "This is a comment",
+                "authorId": "e5268c386c9b17c39bd6a17d"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string",
+                  "description": "Comment creation message"
+                },
+                "example": "Comment created"
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/errorMessage"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/errorMessage"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/posts/{id}/like": {
+      "post": {
+        "tags": [
+          "posts"
+        ],
+        "summary": "Sets the like status of a post for a user",
+        "description": "Define the \"like\" status of a given user for a post If like = 1, the user likes the post. If like = 0, the user cancels its like or dislike (neutral). If like = -1, the user dislikes the post. The ID of the user is added (and/or removed) to the right array. A user can only have one (and only one) value for each post.\n",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/postIdParam"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "userId": {
+                    "type": "string",
+                    "description": "ID of the user"
+                  },
+                  "like": {
+                    "type": "number",
+                    "description": "new like status of the post for the user (-1 dislike / 0 neutral / 1 like)",
+                    "minimum": -1,
+                    "maximum": 1,
+                    "enum": [
+                      -1,
+                      0,
+                      1
+                    ]
+                  }
+                }
+              },
+              "example": {
+                "userId": "e5268c386c9b17c39bd6a17d",
+                "like": 1
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string",
+                  "description": "Post like status update message"
+                },
+                "example": "Post like status updated"
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/errorMessage"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/errorMessage"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/errorMessage"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    },
+    "parameters": {
+      "postIdParam": {
+        "description": "post ID",
+        "name": "id",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "description": "ID of the post"
+        }
+      }
+    },
+    "schemas": {
+      "errorMessage": {
+        "type": "string",
+        "maxLength": 256,
+        "description": "A text message describing an error",
+        "example": "Error during the request processing"
+      },
+      "user": {
+        "type": "object",
+        "description": "data relative to a user (object structure -> user schema)",
+        "properties": {
+          "email": {
+            "type": "string",
+            "description": "e-mail adress of the user [unique]"
+          },
+          "password": {
+            "type": "string",
+            "description": "hashed user password"
+          }
+        }
+      },
+      "post": {
+        "type": "object",
+        "description": "data relative to a post (object structure -> post schema)",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "ID of the post"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date",
+            "description": "Date of creation of the post"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date",
+            "description": "Date of update of the post"
+          },
+          "text": {
+            "type": "string",
+            "description": "Content (text) of the post"
+          },
+          "imageUrl": {
+            "type": "string",
+            "description": "Content (image URL) of the post"
+          },
+          "authorId": {
+            "type": "string",
+            "description": "ID of the user that created the post"
+          },
+          "likes": {
+            "type": "array",
+            "description": "Array of users (user IDs) that likes the post",
+            "items": {
+              "type": "string",
+              "description": "ID of a user that likes the post"
+            },
+            "minItems": 0
+          },
+          "dislikes": {
+            "type": "array",
+            "description": "Array of users (user IDs) that dislikes the post",
+            "items": {
+              "type": "string",
+              "description": "ID of a user that likes the post"
+            },
+            "minItems": 0
+          },
+          "comments": {
+            "type": "array",
+            "description": "Array of comments of the post",
+            "items": {
+              "type": "string",
+              "description": "ID of a comment of the post"
+            },
+            "minItems": 0
+          }
+        },
+        "example": {
+          "id": "cl6dl8yq10022b4muffz9isxl",
+          "createdAt": "2022-08-03T12:31:30.505Z",
+          "updatedAt": "2022-08-03T12:31:30.505Z",
+          "text": "This is a post text",
+          "imageUrl": "http://localhost:3000/images/Post1_image_20220701_162713.jpg",
+          "authorId": "e5268c386c9b17c39bd6a17d",
+          "likes": [
+            "c386c9b17c39be5268d6a17d",
+            "9b17c39be5268dc386c6a17d"
+          ],
+          "dislikes": [
+            "be5268dc386c6a9b17c3917d",
+            "a9b17c3917dbe5268dc386c6"
+          ],
+          "comments": [
+            "cl6doteaj0000l0mu3hjpxhfy",
+            "00l0mu3cl6doteaj00hjpxhfy"
+          ]
+        }
+      },
+      "post-form": {
+        "type": "object",
+        "description": "data to use to create the post (object structure -> post-form schema)",
+        "properties": {
+          "text": {
+            "type": "string",
+            "description": "Content (text) of the post"
+          },
+          "authorId": {
+            "type": "string",
+            "description": "ID of the user that created the post"
+          }
+        },
+        "example": {
+          "text": "This is a post text",
+          "authorId": "e5268c386c9b17c39bd6a17d"
+        }
+      }
+    }
+  }
+}
