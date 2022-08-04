@@ -1,4 +1,7 @@
-
+import fs from 'fs';
+import prisma from "../client.js"
+import {POSTS_IMAGES_SAVE_PATH} from '../utils/constants.js'
+import {formatErrorForResponse} from '../utils/error-utils.js'
 
 /*
  * @oas [get] /api/posts
@@ -29,6 +32,25 @@
  */
 // OUT: Array of posts
 export function getAllPosts(req, res, next) {
+    prisma.post.findMany({
+        include: { 
+            likes: {
+                select: {
+                    id: true,
+                    email: true
+                }
+            },
+            dislikes: {
+                select: {
+                    id: true,
+                    email: true
+                }
+            },
+            comments: true
+        }
+    })
+    .then(posts => res.status(200).json(posts))
+    .catch(error => res.status(400).end(formatErrorForResponse(error)));
 }
 
 /*
@@ -92,6 +114,19 @@ export function getAllPosts(req, res, next) {
 // IN : EITHER Post as JSON OR { post: String, image: File }
 // OUT: { message: String }
 export function createPost(req, res, next) {
+    if (req.fileValidationError) {
+        return res.status(415).end(formatErrorForResponse(new Error(req.fileValidationError)));
+    }
+    const postObject = req.file ?
+        {
+            ...JSON.parse(req.body.post),
+            imageUrl: `${req.protocol}://${req.get('host')}/${POSTS_IMAGES_SAVE_PATH}/${req.file.filename}`
+        } : { ...req.body };
+    prisma.post.create({
+        data: postObject
+    })
+    .then(() => res.status(201).json({ message: 'Post created'}))
+    .catch(error => res.status(400).end(formatErrorForResponse(error)));
 }
 
 /*
@@ -123,6 +158,28 @@ export function createPost(req, res, next) {
  */
 // OUT: Single post
 export function getOnePost(req, res, next) {
+    prisma.post.findUnique({ 
+        where: {
+            id: req.params.id
+        },
+        include: { 
+            likes: {
+                select: {
+                    id: true,
+                    email: true
+                }
+            },
+            dislikes: {
+                select: {
+                    id: true,
+                    email: true
+                }
+            },
+            comments: true
+        }
+    })
+    .then(posts => res.status(200).json(posts))
+    .catch(error => res.status(400).end(formatErrorForResponse(error)));
 }
 
 /*
@@ -200,6 +257,34 @@ export function getOnePost(req, res, next) {
 // IN : EITHER Post as JSON OR { post: String, image: File }
 // OUT: { message: String }
 export function modifyPost(req, res, next) {
+    if (req.fileValidationError) {
+        return res.status(415).end(formatErrorForResponse(new Error(req.fileValidationError)));
+    }
+    const postObject = req.file ?
+        {
+            ...JSON.parse(req.body.post),
+            imageUrl: `${req.protocol}://${req.get('host')}/${POSTS_IMAGES_SAVE_PATH}/${req.file.filename}`
+        } : { ...req.body };
+    prisma.post.update({
+        where: { id: req.params.id },
+        data: postObject
+    })
+    .then(() => {
+        if (req.file && req.post.imageUrl) {
+            var filename = req.post.imageUrl.split(`/${POSTS_IMAGES_SAVE_PATH}/`)[1];
+            if (filename === undefined) {
+                console.error(new Error("No file found in imageUrl : " + req.post.imageUrl));
+            } else {
+                try {
+                    fs.unlinkSync(`${POSTS_IMAGES_SAVE_PATH}/${filename}`);
+                } catch (error) {
+                    console.error(error);
+                }
+            }
+        }
+        res.status(200).json({ message: 'Post updated'});
+    })
+    .catch(error => res.status(400).end(formatErrorForResponse(error)));
 }
 
 /*
@@ -239,6 +324,21 @@ export function modifyPost(req, res, next) {
  */
 // OUT: { message: String }
 export function deletePost(req, res, next) {
+    if (req.post.imageUrl) {
+        const filename = req.post.imageUrl.split(`/${POSTS_IMAGES_SAVE_PATH}/`)[1];
+        if (filename === undefined) {
+            console.error(new Error("No file found in imageUrl : " + req.post.imageUrl));
+        } else {
+            try {
+                fs.unlinkSync(`${POSTS_IMAGES_SAVE_PATH}/${filename}`);
+            } catch (error) {
+                console.error(error);
+            }
+        }
+    }
+    prisma.post.delete({ where: { id: req.params.id } })
+    .then(() => res.status(200).json({ message: 'Post deleted'}))
+    .catch(error => res.status(401).end(formatErrorForResponse(error)));
 }
 
 /*
@@ -290,6 +390,14 @@ export function deletePost(req, res, next) {
 // IN : { userId: String, like: Number }
 // OUT: { message: String }
 export function commentPost(req, res, next) {
+    prisma.comment.create({
+        data: {
+            ...req.body,
+            postId: req.params.id
+        }
+    })
+    .then(() => res.status(201).json({ message: 'Comment created'}))
+    .catch(error => res.status(400).end(formatErrorForResponse(error)));
 }
 
 /*
@@ -355,4 +463,61 @@ export function commentPost(req, res, next) {
 // IN : { userId: String, like: Number }
 // OUT: { message: String }
 export function likePost(req, res, next) {
+    prisma.post.findUnique({ 
+        where: {
+            id: req.params.id
+        },
+        include: { 
+            likes: {
+                select: {
+                    id: true
+                }
+            },
+            dislikes: {
+                select: {
+                    id: true
+                }
+            }
+        }
+    })
+    .then(post => {
+        if (! post) {
+            return res.status(404).json({ message: 'No post found with this ID'})
+        }
+        let likeConnect = [];
+        let likeDisconnect = [];
+        let dislikeConnect = [];
+        let dislikeDisconnect = [];
+        let id = req.body.userId;
+        // Search the user in the likes/dislikes arrays and
+        // remove the old like/dislike if found
+        if (post.likes.findIndex(user => user.id === id) != -1) {
+            likeDisconnect = { id };
+        }
+        if (post.dislikes.findIndex(user => user.id === id) != -1) {
+            dislikeDisconnect = { id };
+        }
+        // Add the new like/dislike
+        if (req.body.like === 1) {
+            likeConnect = { id };
+        } else if (req.body.like === -1) {
+            dislikeConnect = { id };
+        }
+        prisma.post.update({
+            where: { id: req.params.id },
+            data: {
+                likes: {
+                    connect : likeConnect,
+                    disconnect: likeDisconnect
+                },
+                dislikes: {
+                    connect : dislikeConnect,
+                    disconnect: dislikeDisconnect
+                }
+            }
+        })
+        .then(() => res.status(200).json({ message: 'Post like status updated'}))
+        .catch(error => res.status(400).end(formatErrorForResponse(error)));
+    })
+    .catch(error => res.status(404).end(formatErrorForResponse(error)));
 }
