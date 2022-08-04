@@ -1,0 +1,163 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "version": "1.0.0",
+    "title": "groupomania-api",
+    "description": "",
+    "license": {
+      "name": "ISC"
+    }
+  },
+  "tags": [
+    {
+      "name": "auth",
+      "description": "Everything about the authenthication"
+    },
+    {
+      "name": "posts",
+      "description": "Everything about the posts"
+    }
+  ],
+  "servers": [
+    {
+      "url": "http://localhost:3000"
+    }
+  ],
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "paths": {},
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    },
+    "parameters": {
+      "postIdParam": {
+        "description": "post ID",
+        "name": "id",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "description": "ID of the post"
+        }
+      }
+    },
+    "schemas": {
+      "errorMessage": {
+        "type": "string",
+        "maxLength": 256,
+        "description": "A text message describing an error",
+        "example": "Error during the request processing"
+      },
+      "user": {
+        "type": "object",
+        "description": "data relative to a user (object structure -> user schema)",
+        "properties": {
+          "email": {
+            "type": "string",
+            "description": "e-mail adress of the user [unique]"
+          },
+          "password": {
+            "type": "string",
+            "description": "hashed user password"
+          }
+        }
+      },
+      "post": {
+        "type": "object",
+        "description": "data relative to a post (object structure -> post schema)",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "ID of the post"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date",
+            "description": "Date of creation of the post"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date",
+            "description": "Date of update of the post"
+          },
+          "text": {
+            "type": "string",
+            "description": "Content (text) of the post"
+          },
+          "imageUrl": {
+            "type": "string",
+            "description": "Content (image URL) of the post"
+          },
+          "authorId": {
+            "type": "string",
+            "description": "ID of the user that created the post"
+          },
+          "likes": {
+            "type": "array",
+            "description": "Array of users (user IDs) that likes the post",
+            "items": {
+              "type": "string",
+              "description": "ID of a user that likes the post"
+            },
+            "minItems": 0
+          },
+          "dislikes": {
+            "type": "array",
+            "description": "Array of users (user IDs) that dislikes the post",
+            "items": {
+              "type": "string",
+              "description": "ID of a user that likes the post"
+            },
+            "minItems": 0
+          },
+          "comments": {
+            "type": "array",
+            "description": "Array of comments of the post",
+            "items": {
+              "type": "string",
+              "description": "ID of a comment of the post"
+            },
+            "minItems": 0
+          }
+        },
+        "example": {
+          "id":"cl6dl8yq10022b4muffz9isxl",
+          "createdAt":"2022-08-03T12:31:30.505Z",
+          "updatedAt":"2022-08-03T12:31:30.505Z",
+          "text":"This is a post text",
+          "imageUrl":"http://localhost:3000/images/Post1_image_20220701_162713.jpg",
+          "authorId":"e5268c386c9b17c39bd6a17d",
+          "likes":["c386c9b17c39be5268d6a17d","9b17c39be5268dc386c6a17d"],
+          "dislikes":["be5268dc386c6a9b17c3917d","a9b17c3917dbe5268dc386c6"],
+          "comments":["cl6doteaj0000l0mu3hjpxhfy","00l0mu3cl6doteaj00hjpxhfy"]
+        }
+      },
+      "post-form": {
+        "type": "object",
+        "description": "data to use to create the post (object structure -> post-form schema)",
+        "properties": {
+          "text": {
+            "type": "string",
+            "description": "Content (text) of the post"
+          },
+          "authorId": {
+            "type": "string",
+            "description": "ID of the user that created the post"
+          }
+        },
+        "example": {
+          "text":"This is a post text",
+          "authorId":"e5268c386c9b17c39bd6a17d"
+        }
+      }
+    }
+  }
+}
