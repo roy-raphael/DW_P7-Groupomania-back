@@ -11,19 +11,34 @@ datasource db {
 }
 
 model User {
-  id           Int    @id @default(autoincrement())
-  email        String @unique
-  password     String
-  writtenPosts Post[] @relation("WrittenPosts")
-  likedPosts   Post[] @relation("LikedPosts")
+  id            String    @id @default(cuid())
+  email         String    @unique
+  password      String
+  writtenPosts  Post[]    @relation("WrittenPosts")
+  likedPosts    Post[]    @relation("LikedPosts")
+  dislikedPosts Post[]    @relation("DislikedPosts")
+  comments      Comment[]
 }
 
 model Post {
-  id        Int      @id @default(autoincrement())
+  id        String    @id @default(cuid())
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  text      String
+  imageUrl  String?
+  author    User      @relation("WrittenPosts", fields: [authorId], references: [id])
+  authorId  String
+  likes     User[]    @relation("LikedPosts")
+  dislikes  User[]    @relation("DislikedPosts")
+  comments  Comment[]
+}
+
+model Comment {
+  id        String   @id @default(cuid())
   createdAt DateTime @default(now())
-  content   String
-  image     String
-  author    User     @relation("WrittenPosts", fields: [authorId], references: [id])
-  authorId  Int
-  likes     User[]   @relation("LikedPosts")
+  text      String
+  author    User     @relation(fields: [authorId], references: [id])
+  authorId  String
+  post      Post     @relation(fields: [postId], references: [id])
+  postId    String
 }
