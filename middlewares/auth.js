@@ -11,7 +11,7 @@ function authenticate(req, res, next) {
         const decodedToken = verify(token, req.body.email);
         const userId = decodedToken.userId;
         req.auth = { userId };
-        if (req.body.userId && req.body.userId !== userId) {
+        if (req.body.authorId && req.body.authorId !== userId) {
             throw new Error('Invalid user ID (for authentication)');
         } else {
             next();
