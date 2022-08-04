@@ -1,5 +1,5 @@
-import prisma from "../client.js"
 import bcrypt from 'bcrypt';
+import prisma from "../client.js"
 import {loginLimiter, loginConsecutiveLimiter, getFibonacciBlockDurationMinutes} from '../middlewares/rate-limiter.js'
 import {formatErrorForResponse} from '../utils/error-utils.js'
 import {sign} from '../utils/jwt-utils.js'
@@ -39,7 +39,6 @@ import {sign} from '../utils/jwt-utils.js'
  */
 // IN : { email: string, password: string }
 // OUT: { message: string }
-import { Prisma } from '@prisma/client'
 export function signup(req, res, next) {
     bcrypt.hash(req.body.password, 10)
     .then(hash => {
@@ -61,8 +60,8 @@ export function signup(req, res, next) {
  * tags: ["auth"]
  * summary: Connexion of a user
  * description: >
- *  Check of the user identification informations, return the _id of the user from
- *  the database and a signed JSON web token (containing the _id of the user).
+ *  Check of the user identification informations, return the id of the user from
+ *  the database and a signed JSON web token (containing the id of the user).
  *  The number of (failed) attempts to connect for a user is limited (in the time as well).
  * requestBody:
  *  required: true
