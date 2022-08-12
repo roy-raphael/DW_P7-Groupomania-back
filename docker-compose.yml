@@ -1,0 +1,26 @@
+version: '3'
+services:
+  db:
+    image: mysql:latest
+    volumes:
+      - db_data:/var/lib/mysql
+    restart: always
+    command: --lower_case_table_names=1
+    environment:
+      MYSQL_ROOT_PASSWORD: qFErNa@7d5t&Zv
+      MYSQL_DATABASE: groupomania_main
+      MYSQL_USER: groupomania
+      MYSQL_PASSWORD: j!ET@*XC63bncf
+    
+  api:
+    depends_on:
+      - db
+    volumes:
+      - ../rsa_keys:/app/rsa_keys
+    image: groupomania_back:latest
+    ports:
+      - "3000:3000"
+    restart: always
+
+volumes:
+  db_data: {}

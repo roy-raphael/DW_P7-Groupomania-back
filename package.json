@@ -5,10 +5,15 @@
   "main": "server.js",
   "type": "module",
   "scripts": {
-    "migrate": "npx prisma migrate dev --name ",
-    "pm_editor": "npx prisma studio",
-    "pm_format": "npx prisma format",
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "start:migrate": "prisma migrate deploy && npm run start",
+    "docker:build": "docker build -t groupomania_back .",
+    "docker:run": "docker run -it groupomania_back",
+    "docker:clean": "docker system prune && npm run docker:clean:volume",
+    "docker:clean:images": "docker rmi $(docker images -qa -f 'dangling=true')",
+    "docker:clean:volume": "docker volume prune --filter label!=com.docker.compose.volume=db_data -f",
+    "prisma:migrate": "npx prisma migrate dev --name ",
+    "prisma:editor": "npx prisma studio",
+    "prisma:format": "npx prisma format",
     "doc": "npx oas generate groupomania-openapi-base.json -v > groupomania-openapi-doc.json"
   },
   "repository": {
