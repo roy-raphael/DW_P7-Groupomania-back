@@ -1,4 +1,4 @@
-import {formatErrorForResponse} from '../utils/error-utils.js'
+import {handleError} from '../utils/error-utils.js'
 import {verify} from '../utils/jwt-utils.js'
 
 function authenticate(req, res, next) {
@@ -17,7 +17,7 @@ function authenticate(req, res, next) {
             next();
         }
     } catch(error) {
-        res.status(401).end(formatErrorForResponse(error));
+        return handleError(res, 401, error);
     }
 }
 

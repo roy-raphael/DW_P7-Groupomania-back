@@ -1,7 +1,7 @@
 import bcrypt from 'bcrypt';
 import prisma from "../client.js"
 import {loginLimiter, loginConsecutiveLimiter, getFibonacciBlockDurationMinutes} from '../middlewares/rate-limiter.js'
-import {formatErrorForResponse} from '../utils/error-utils.js'
+import {handleError} from '../utils/error-utils.js'
 import {sign} from '../utils/jwt-utils.js'
 
 /*
@@ -50,9 +50,9 @@ export function signup(req, res, next) {
             data: user
         })
         .then(() => res.status(201).json({ message: 'User created' }))
-        .catch(error => res.status(400).end(formatErrorForResponse(error)));
+        .catch(error => handleError(res, 400, error));
     })
-    .catch(error => res.status(500).end(formatErrorForResponse(error)));
+    .catch(error => handleError(res, 500, error));
 }
 
 /*
@@ -112,7 +112,7 @@ export function login(req, res, next) {
     prisma.user.findUnique({ where: { email: userEmail }, select: { id: true, password: true }})
     .then(async user => {
         if (!user) {
-            return res.status(401).end(formatErrorForResponse(new Error('User not found')));
+            return handleError(res, 401, new Error('User not found'));
         }
         // Sign in the user
         bcrypt.compare(req.body.password, user.password)
@@ -145,10 +145,10 @@ export function login(req, res, next) {
                     }
                 }
                 res.set('Retry-After', String(blockDurationSeconds) || 1);
-                res.status(401).end(formatErrorForResponse(new Error('Incorrect password')));
+                return handleError(res, 401, new Error('Incorrect password'));
             }
         })
-        .catch(error => res.status(500).end(formatErrorForResponse(error)));
+        .catch(error => handleError(res, 500, error));
     })
-    .catch(error => res.status(500).end(formatErrorForResponse(error)));
+    .catch(error => handleError(res, 500, error));
 }

@@ -1,7 +1,7 @@
 import fs from 'fs';
 import prisma from "../client.js"
 import {POSTS_IMAGES_SAVE_PATH} from '../utils/constants.js'
-import {formatErrorForResponse} from '../utils/error-utils.js'
+import {handleError} from '../utils/error-utils.js'
 
 /*
  * @oas [get] /api/posts
@@ -29,6 +29,12 @@ import {formatErrorForResponse} from '../utils/error-utils.js'
  *      application/json:
  *        schema:
  *          $ref: "#/components/schemas/errorMessage"
+ *  "500":
+ *    description: Internal Server Error
+ *    content:
+ *      application/json:
+ *        schema:
+ *          $ref: "#/components/schemas/errorMessage"
  */
 // OUT: Array of posts
 export function getAllPosts(req, res, next) {
@@ -50,7 +56,7 @@ export function getAllPosts(req, res, next) {
         }
     })
     .then(posts => res.status(200).json(posts))
-    .catch(error => res.status(400).end(formatErrorForResponse(error)));
+    .catch(error => handleError(res, 400, error));
 }
 
 /*
@@ -110,12 +116,18 @@ export function getAllPosts(req, res, next) {
  *      application/json:
  *        schema:
  *          $ref: "#/components/schemas/errorMessage"
+ *  "500":
+ *    description: Internal Server Error
+ *    content:
+ *      application/json:
+ *        schema:
+ *          $ref: "#/components/schemas/errorMessage"
  */
 // IN : EITHER Post as JSON OR { post: String, image: File }
 // OUT: { message: String }
 export function createPost(req, res, next) {
     if (req.fileValidationError) {
-        return res.status(415).end(formatErrorForResponse(new Error(req.fileValidationError)));
+        return handleError(res, 415, new Error(req.fileValidationError));
     }
     const postObject = req.file ?
         {
@@ -126,7 +138,7 @@ export function createPost(req, res, next) {
         data: postObject
     })
     .then(() => res.status(201).json({ message: 'Post created'}))
-    .catch(error => res.status(400).end(formatErrorForResponse(error)));
+    .catch(error => handleError(res, 400, error));
 }
 
 /*
@@ -155,6 +167,12 @@ export function createPost(req, res, next) {
  *      application/json:
  *        schema:
  *          $ref: "#/components/schemas/errorMessage"
+ *  "500":
+ *    description: Internal Server Error
+ *    content:
+ *      application/json:
+ *        schema:
+ *          $ref: "#/components/schemas/errorMessage"
  */
 // OUT: Single post
 export function getOnePost(req, res, next) {
@@ -179,7 +197,7 @@ export function getOnePost(req, res, next) {
         }
     })
     .then(posts => res.status(200).json(posts))
-    .catch(error => res.status(400).end(formatErrorForResponse(error)));
+    .catch(error => handleError(res, 400, error));
 }
 
 /*
@@ -253,12 +271,18 @@ export function getOnePost(req, res, next) {
  *      application/json:
  *        schema:
  *          $ref: "#/components/schemas/errorMessage"
+ *  "500":
+ *    description: Internal Server Error
+ *    content:
+ *      application/json:
+ *        schema:
+ *          $ref: "#/components/schemas/errorMessage"
  */
 // IN : EITHER Post as JSON OR { post: String, image: File }
 // OUT: { message: String }
 export function modifyPost(req, res, next) {
     if (req.fileValidationError) {
-        return res.status(415).end(formatErrorForResponse(new Error(req.fileValidationError)));
+        return handleError(res, 415, new Error(req.fileValidationError));
     }
     const postObject = req.file ?
         {
@@ -284,7 +308,7 @@ export function modifyPost(req, res, next) {
         }
         res.status(200).json({ message: 'Post updated'});
     })
-    .catch(error => res.status(400).end(formatErrorForResponse(error)));
+    .catch(error => handleError(res, 400, error));
 }
 
 /*
@@ -321,6 +345,12 @@ export function modifyPost(req, res, next) {
  *      application/json:
  *        schema:
  *          $ref: "#/components/schemas/errorMessage"
+ *  "500":
+ *    description: Internal Server Error
+ *    content:
+ *      application/json:
+ *        schema:
+ *          $ref: "#/components/schemas/errorMessage"
  */
 // OUT: { message: String }
 export function deletePost(req, res, next) {
@@ -338,7 +368,7 @@ export function deletePost(req, res, next) {
     }
     prisma.post.delete({ where: { id: req.params.id } })
     .then(() => res.status(200).json({ message: 'Post deleted'}))
-    .catch(error => res.status(401).end(formatErrorForResponse(error)));
+    .catch(error => handleError(res, 401, error));
 }
 
 /*
@@ -386,6 +416,12 @@ export function deletePost(req, res, next) {
  *      application/json:
  *        schema:
  *          $ref: "#/components/schemas/errorMessage"
+ *  "500":
+ *    description: Internal Server Error
+ *    content:
+ *      application/json:
+ *        schema:
+ *          $ref: "#/components/schemas/errorMessage"
  */
 // IN : { userId: String, like: Number }
 // OUT: { message: String }
@@ -397,7 +433,7 @@ export function commentPost(req, res, next) {
         }
     })
     .then(() => res.status(201).json({ message: 'Comment created'}))
-    .catch(error => res.status(400).end(formatErrorForResponse(error)));
+    .catch(error => handleError(res, 400, error));
 }
 
 /*
@@ -455,6 +491,12 @@ export function commentPost(req, res, next) {
  *          $ref: "#/components/schemas/errorMessage"
  *  "404":
  *    description: Not Found
+ *    content:
+ *      application/json:
+ *        schema:
+ *          $ref: "#/components/schemas/errorMessage"
+ *  "500":
+ *    description: Internal Server Error
  *    content:
  *      application/json:
  *        schema:
@@ -517,7 +559,7 @@ export function likePost(req, res, next) {
             }
         })
         .then(() => res.status(200).json({ message: 'Post like status updated'}))
-        .catch(error => res.status(400).end(formatErrorForResponse(error)));
+        .catch(error => handleError(res, 400, error));
     })
-    .catch(error => res.status(404).end(formatErrorForResponse(error)));
+    .catch(error => handleError(res, 404, error));
 }

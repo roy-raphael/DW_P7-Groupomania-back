@@ -1,5 +1,5 @@
 import prisma from "../client.js"
-import {formatErrorForResponse} from '../utils/error-utils.js'
+import {handleError} from '../utils/error-utils.js'
 
 // Check if the user has the right to modify the post
 function postAuthorize(req, res, next) {
@@ -16,7 +16,7 @@ function postAuthorize(req, res, next) {
             next();
         }
     })
-    .catch(error => res.status(500).end(formatErrorForResponse(error)));
+    .catch(error => handleError(res, 500, error));
 }
 
 export default postAuthorize;

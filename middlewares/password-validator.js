@@ -1,5 +1,5 @@
 import passwordValidator from 'password-validator'
-import {formatErrorForResponse} from '../utils/error-utils.js'
+import {handleError} from '../utils/error-utils.js'
 
 // Create a schema
 var passwordSchema = new passwordValidator();
@@ -26,7 +26,7 @@ function validatePassword(req, res, next) {
         let errorMessage = "Password too weak.";
         passwordValidatorErrorsList.forEach(element => errorMessage += "\n" + element.message);
         console.log(errorMessage);
-        return res.status(403).end(formatErrorForResponse(new Error(errorMessage)));
+        return handleError(res, 403, new Error(errorMessage));
     }
 }
 
