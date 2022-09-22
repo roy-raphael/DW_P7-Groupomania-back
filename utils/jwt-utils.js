@@ -11,8 +11,8 @@ var publicKEY = '';
 
 try {
     // use 'utf8' to get string instead of byte array
-    privateKEY = fs.readFileSync(process.env.RSA_PRIVATE_KEY, 'utf8');
-    publicKEY = fs.readFileSync(process.env.RSA_PUBLIC_KEY, 'utf8');
+    privateKEY = fs.readFileSync(process.env.SEC_RSA_PRIVATE_KEY, 'utf8');
+    publicKEY = fs.readFileSync(process.env.SEC_RSA_PUBLIC_KEY, 'utf8');
 } catch(error) {
     console.error(error);
     process.kill(process.pid, 'SIGTERM');

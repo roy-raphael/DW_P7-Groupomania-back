@@ -16,7 +16,7 @@ services:
     depends_on:
       - db
     volumes:
-      - ../rsa_keys:/app/rsa_keys
+      - ../../sec_files:/app/sec_files
     image: groupomania_back:latest
     ports:
       - "3000:3000"

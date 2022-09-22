@@ -10,8 +10,10 @@ if (result.error) {
 // Check the dotenv file
 let dotenvMissingVariables = [];
 if (process.env.DATABASE_URL === undefined) dotenvMissingVariables.push("DATABASE_URL");
-if (process.env.RSA_PRIVATE_KEY === undefined) dotenvMissingVariables.push("RSA_PRIVATE_KEY");
-if (process.env.RSA_PUBLIC_KEY === undefined) dotenvMissingVariables.push("RSA_PUBLIC_KEY");
+if (process.env.SEC_RSA_PRIVATE_KEY === undefined) dotenvMissingVariables.push("SEC_RSA_PRIVATE_KEY");
+if (process.env.SEC_RSA_PUBLIC_KEY === undefined) dotenvMissingVariables.push("SEC_RSA_PUBLIC_KEY");
+if (process.env.SEC_CERTIFICATE_FILE === undefined) dotenvMissingVariables.push("SEC_CERTIFICATE_FILE");
+if (process.env.SEC_CERTIFICATE_PRIVATE_KEY === undefined) dotenvMissingVariables.push("SEC_CERTIFICATE_PRIVATE_KEY");
 if (process.env.JWT_ISSUER === undefined) dotenvMissingVariables.push("JWT_ISSUER");
 if (process.env.JWT_AUDIENCE === undefined) dotenvMissingVariables.push("JWT_AUDIENCE");
 if (dotenvMissingVariables.length !== 0) {

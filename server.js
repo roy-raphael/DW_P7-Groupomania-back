@@ -1,5 +1,8 @@
-import * as http from 'http';
+// import * as http from 'http';
+import * as https from 'https';
+import fs from 'fs';
 import app from './app.js';
+import process from './utils/load-env.js';
 
 const normalizePort = val => {
     const port = parseInt(val, 10);
@@ -35,7 +38,20 @@ const errorHandler = error => {
     }
 };
 
-const server = http.createServer(app);
+var key;
+var cert;
+try {
+    // use 'utf8' to get string instead of byte array
+    key = fs.readFileSync(process.env.SEC_CERTIFICATE_PRIVATE_KEY, 'utf8');
+    cert = fs.readFileSync(process.env.SEC_CERTIFICATE_FILE, 'utf8');
+} catch(error) {
+    console.error(error);
+    process.kill(process.pid, 'SIGTERM');
+}
+const options = { key, cert };
+
+// const server = http.createServer(app);
+const server = https.createServer(options, app);
 
 server.on('error', errorHandler);
 server.on('listening', () => {
