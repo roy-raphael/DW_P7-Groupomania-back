@@ -27,7 +27,7 @@
   },
   "homepage": "https://github.com/roy-raphael/DW_P7-Groupomania-back#readme",
   "dependencies": {
-    "@prisma/client": "^4.1.1",
+    "@prisma/client": "^4.4.0",
     "bcrypt": "^5.0.1",
     "dotenv": "^16.0.1",
     "express": "^4.18.1",
@@ -37,8 +37,10 @@
     "multer": "^1.4.5-lts.1",
     "oas": "^18.3.4",
     "password-validator": "^5.3.0",
-    "prisma": "^4.1.1",
     "rate-limiter-flexible": "^2.3.8",
     "sharp": "^0.30.7"
+  },
+  "devDependencies": {
+    "prisma": "^4.4.0"
   }
 }
