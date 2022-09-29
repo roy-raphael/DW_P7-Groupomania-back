@@ -2,7 +2,7 @@ import bcrypt from 'bcrypt';
 import prisma from "../client.js"
 import {loginLimiter, loginConsecutiveLimiter, getFibonacciBlockDurationMinutes} from '../middlewares/rate-limiter.js'
 import {handleError} from '../utils/error-utils.js'
-import {sign} from '../utils/jwt-utils.js'
+import * as jwtUtils from '../utils/jwt-utils.js'
 
 /*
  * @oas [post] /api/auth/signup
@@ -54,6 +54,8 @@ export function signup(req, res, next) {
     })
     .catch(error => handleError(res, 500, error));
 }
+
+var refreshTokens = {};
 
 /*
  * @oas [post] /api/auth/login
@@ -118,13 +120,46 @@ export function login(req, res, next) {
         bcrypt.compare(req.body.password, user.password)
         .then(async valid => {
             if (valid) {
-                var token = sign({ userId: user.id }, userEmail);
-                res.status(200).json({
-                    userId: user.id,
-                    token: token
-                });
-                // Update the login rate limiters (only if the bcrypt.compare function doesn't fail)
-                await loginConsecutiveLimiter.delete(userEmail);
+                // Store an id (relative to the refresh token) in the database with the user's information (userId) and expiration date
+                const refreshTokenExpirationTimestamp = jwtUtils.getRefreshTokenInitialExpirationTimestamp();
+                // const refreshTokenExpirationDate = new Date(getRefreshTokenInitialExpirationTimestamp() * 1000);
+                prisma.refreshToken.create({
+                    data: {
+                        expirationDate: new Date(refreshTokenExpirationTimestamp * 1000),
+                        userId: user.id
+                    },
+                    select: { id: true }
+                })
+                .then(async refreshTokenData => {
+                    // Sign the access token and the refresh token
+                    var accessToken = jwtUtils.sign({ userId: user.id }, userEmail);
+                    var refreshToken = jwtUtils.signRefresh({ userId: user.id, refreshTokenId: refreshTokenData.id }, userEmail, refreshTokenExpirationTimestamp);
+                    // Before sending the response, delete the old refresh token id (if login was send with a token)
+                    const refreshTokenAuth = req.headers.authorization;
+                    if (refreshTokenAuth !== undefined) {
+                        const oldRefreshToken = refreshTokenAuth.split(' ')[1];
+                        // Here, no matter if the token is valid or not, we just want to revoke this old token by its id
+                        const oldRefreshTokenId = jwtUtils.decodePayload(oldRefreshToken).refreshTokenId;
+                        prisma.refreshToken.findUnique({ where: { id: oldRefreshTokenId } })
+                        .then(oldRefreshTokenData => {
+                            if (oldRefreshTokenData) {
+                                prisma.refreshToken.delete({ where: { id: oldRefreshTokenId } })
+                                .catch(error => console.error("Refresh token data could not be deleted from database : " + error));
+                            }
+                        })
+                        .catch(error => console.error("Refresh token data could not be deleted from database : " + error));
+                        
+                    }
+                    // Send the response
+                    res.status(200).json({
+                        userId: user.id,
+                        token: accessToken,
+                        refreshToken: refreshToken
+                    });
+                    // Update the login rate limiters (only if the bcrypt.compare function doesn't fail)
+                    await loginConsecutiveLimiter.delete(userEmail);
+                })
+                .catch(error => handleError(res, 500, error));                
             } else {
                 // Update the login rate limiters (only if the bcrypt.compare function doesn't fail)
                 let blockDurationSeconds = 1; // initial value (for default blocking)
@@ -151,4 +186,103 @@ export function login(req, res, next) {
         .catch(error => handleError(res, 500, error));
     })
     .catch(error => handleError(res, 500, error));
+}
+
+export async function refresh(req, res, next) {
+    try {
+        const refreshTokenAuth = req.headers.authorization;
+        if (refreshTokenAuth === undefined) {
+            throw new Error('No token provided (for refresh)');
+        }
+        const refreshToken = refreshTokenAuth.split(' ')[1];
+        const refreshTokenId = jwtUtils.decodePayload(refreshToken).refreshTokenId;
+        if (refreshTokenId === undefined) {
+            throw new Error('Incomplete (missing data) token (for refresh)');
+        }
+        prisma.refreshToken.findUnique({
+            where: { id: refreshTokenId },
+            include: { 
+                user: true
+            }
+        })
+        .then(refreshTokenData => {
+            if (refreshTokenData) {
+                const user = refreshTokenData.user;
+                if (!user) {
+                    return handleError(res, 500, new Error("No user exists for this token"));
+                }
+                try {
+                    jwtUtils.verifyRefresh(refreshToken, user.email);
+                } catch(error) {
+                    // If the token is expired : delete it from the database
+                    if (jwtUtils.isErrorTokenExpired(error)) {
+                        prisma.refreshToken.delete({ where: { id: refreshTokenId } })
+                        .catch(error => console.error("Refresh token data could not be deleted from database : " + error));
+                    }
+                    // The token is invalid : return an authentication error
+                    return handleError(res, 401, new Error("Refresh token invalid"));
+                }
+                // The refresh token is valid : return new access and refresh tokens
+                var accessToken = jwtUtils.sign({ userId: user.id }, user.email);
+                const expirationTimestamp = Math.round(refreshTokenData.expirationDate.getTime()/1000);
+                var newRefreshToken = jwtUtils.signRefresh({ userId: user.id, refreshTokenId: refreshTokenData.id }, user.email, expirationTimestamp);
+                res.status(200).json({
+                    userId: user.id,
+                    token: accessToken,
+                    refreshToken: newRefreshToken
+                });
+            } else {
+                console.log("UNIQUE NOT FOUND"); // TODO remove
+                // If the refresh token is not found on database : it has already been used (or it has expired)
+                // Si le refresh token n’est pas trouvé, ça veut dire qu’il a déjà été utilisé :
+                const decodedPayloadUserId = jwtUtils.decodePayload(refreshToken).userId;
+                // Get email from database with the user ID
+                prisma.user.findUnique({ where: { id: decodedPayloadUserId }, select: { email: true }})
+                .then(user => {
+                    if (!user) {
+                        return handleError(res, 401, new Error("Refresh token invalid"));
+                    }
+                    try {
+                        jwtUtils.verifyRefresh(refreshToken, user.email);
+                        // If the token is valid, remove from the database all the refresh tokens for this user ID
+                    } catch(error) {
+                        if (jwtUtils.isErrorTokenExpired(error)) {
+                            // If the refresh token is expired : we only send an authentication error
+                            return handleError(res, 401, new Error("Refresh token expired"));
+                        }
+                        // If the token could not be validated, its data may have been modified...
+                        // In doubt, remove from the database all the tokens for this user ID
+                    }
+                    prisma.refreshToken.deleteMany({ where: { userId: decodedPayloadUserId } })
+                    .catch(error => console.error("Refresh tokens could not be deleted from database" + error));
+                    return handleError(res, 401, new Error("Refresh token already used"));
+                })
+                .catch(error => handleError(res, 500, error));
+            }
+        })
+        .catch(error => handleError(res, 500, error));
+    } catch(error) {
+        handleError(res, 401, error);
+    }
+}
+
+export async function logout(req, res, next) {
+    try {
+        const refreshTokenAuth = req.headers.authorization;
+        if (refreshTokenAuth === undefined) {
+            throw new Error('No token provided (for logout)');
+        }
+        const refreshToken = refreshTokenAuth.split(' ')[1];
+        const decodedPayloadRefreshTokenId = jwtUtils.decodePayload(refreshToken).refreshTokenId;
+        // Delete the refresh token in database, no matter if it is valid or not
+        if (decodedPayloadRefreshTokenId !== undefined) {
+            prisma.refreshToken.delete({ where: { id: decodedPayloadRefreshTokenId } })
+            .then(() => res.status(204).end())
+            .catch(() => handleError(res, 500, new Error("Refresh tokens could not be deleted from database")));
+        } else {
+            throw new Error('No refreshTokenId in token provided (for logout)');
+        }
+    } catch(error) {
+        handleError(res, 401, error);
+    }
 }
