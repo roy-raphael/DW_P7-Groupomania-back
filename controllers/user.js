@@ -15,6 +15,7 @@ import * as jwtUtils from '../utils/jwt-utils.js'
  *    application/json:
  *      schema:
  *        $ref: "#/components/schemas/user"
+ * security: []
  * responses:
  *  "201":
  *    description: OK
@@ -55,15 +56,14 @@ export function signup(req, res, next) {
     .catch(error => handleError(res, 500, error));
 }
 
-var refreshTokens = {};
-
 /*
  * @oas [post] /api/auth/login
  * tags: ["auth"]
  * summary: Connexion of a user
  * description: >
  *  Check of the user identification informations, return the id of the user from
- *  the database and a signed JSON web token (containing the id of the user).
+ *  the database and 2 signed JSON web tokens (an access token, and a refresh token).
+ *  If a refresh token is in the authorization headers of the request, it is revoked from the database.
  *  The number of (failed) attempts to connect for a user is limited (in the time as well).
  * requestBody:
  *  required: true
@@ -71,6 +71,8 @@ var refreshTokens = {};
  *    application/json:
  *      schema:
  *        $ref: "#/components/schemas/user"
+ * security:
+ *  - {bearerAuth: []}
  * responses:
  *  "200":
  *    description: OK
@@ -81,13 +83,17 @@ var refreshTokens = {};
  *          properties:
  *            userId:
  *              type: string
- *              description: ID de l'utilisateur (depuis la base de données)
+ *              description: ID of the user (from the database)
  *            token:
  *              type: string
- *              description: token web JSON signé (contenant également l'ID de l'utilisateur)
+ *              description: signed access token (containing the user ID)
+ *            refreshToken:
+ *              type: string
+ *              description: signed refresh token (containing the user ID and the refresh token ID stored in the database)
  *        example:
  *          userId: e5268c386c9b17c39bd6a17d
  *          token: ...
+ *          refreshToken: ...
  *  "401":
  *    description: Unauthorized
  *    content:
@@ -108,7 +114,7 @@ var refreshTokens = {};
  *          $ref: "#/components/schemas/errorMessage"
  */
 // IN : { email: string, password: string }
-// OUT: { userId: string, token: string }
+// OUT: { userId: string, token: string, refreshToken: string }
 export function login(req, res, next) {
     const userEmail = req.body.email;
     prisma.user.findUnique({ where: { email: userEmail }, select: { id: true, password: true }})
@@ -148,7 +154,6 @@ export function login(req, res, next) {
                             }
                         })
                         .catch(error => console.error("Refresh token data could not be deleted from database : " + error));
-                        
                     }
                     // Send the response
                     res.status(200).json({
@@ -188,6 +193,50 @@ export function login(req, res, next) {
     .catch(error => handleError(res, 500, error));
 }
 
+/*
+ * @oas [post] /api/auth/refresh
+ * tags: ["auth"]
+ * summary: Retrieve a new access token from a refresh token
+ * description: >
+ *  Checks the refresh token validity and its validity in the database,
+ *  and sends back a new access token and a new refresh token if all is fine.
+ *  Else, revokes the refresh token ID in the database, so other users with the same
+ *  refresh token ID won't be able to get access tokens from this refresh token ID.
+ * responses:
+ *  "200":
+ *    description: OK
+ *    content:
+ *      application/json:
+ *        schema:
+ *          type: object
+ *          properties:
+ *            userId:
+ *              type: string
+ *              description: ID of the user (from the database)
+ *            accessToken:
+ *              type: string
+ *              description: signed access token (containing the user ID)
+ *            refreshToken:
+ *              type: string
+ *              description: signed refresh token (containing the user ID and the refresh token ID stored in the database)
+ *        example:
+ *          userId: e5268c386c9b17c39bd6a17d
+ *          accessToken: ...
+ *          refreshToken: ...
+ *  "401":
+ *    description: Unauthorized
+ *    content:
+ *      application/json:
+ *        schema:
+ *          $ref: "#/components/schemas/errorMessage"
+ *  "500":
+ *    description: Internal Server Error
+ *    content:
+ *      application/json:
+ *        schema:
+ *          $ref: "#/components/schemas/errorMessage"
+ */
+// OUT: { userId: string, accessToken: string, refreshToken: string }
 export async function refresh(req, res, next) {
     try {
         const refreshTokenAuth = req.headers.authorization;
@@ -232,9 +281,7 @@ export async function refresh(req, res, next) {
                     refreshToken: newRefreshToken
                 });
             } else {
-                console.log("UNIQUE NOT FOUND"); // TODO remove
                 // If the refresh token is not found on database : it has already been used (or it has expired)
-                // Si le refresh token n’est pas trouvé, ça veut dire qu’il a déjà été utilisé :
                 const decodedPayloadUserId = jwtUtils.decodePayload(refreshToken).userId;
                 // Get email from database with the user ID
                 prisma.user.findUnique({ where: { id: decodedPayloadUserId }, select: { email: true }})
@@ -266,6 +313,29 @@ export async function refresh(req, res, next) {
     }
 }
 
+/*
+ * @oas [post] /api/auth/logout
+ * tags: ["auth"]
+ * summary: Disconnexion of a user to revoke the current refresh token
+ * description: >
+ *  Checks the refresh token payload and revokes its ID in the database, so other users with
+ *  the same refresh token ID won't be able to get access tokens from this refresh token ID.
+ * responses:
+ *  "204":
+ *    description: OK
+ *  "401":
+ *    description: Unauthorized
+ *    content:
+ *      application/json:
+ *        schema:
+ *          $ref: "#/components/schemas/errorMessage"
+ *  "500":
+ *    description: Internal Server Error
+ *    content:
+ *      application/json:
+ *        schema:
+ *          $ref: "#/components/schemas/errorMessage"
+ */
 export async function logout(req, res, next) {
     try {
         const refreshTokenAuth = req.headers.authorization;
