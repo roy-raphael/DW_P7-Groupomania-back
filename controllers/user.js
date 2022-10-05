@@ -84,7 +84,7 @@ export function signup(req, res, next) {
  *            userId:
  *              type: string
  *              description: ID of the user (from the database)
- *            token:
+ *            accessToken:
  *              type: string
  *              description: signed access token (containing the user ID)
  *            refreshToken:
@@ -92,7 +92,7 @@ export function signup(req, res, next) {
  *              description: signed refresh token (containing the user ID and the refresh token ID stored in the database)
  *        example:
  *          userId: e5268c386c9b17c39bd6a17d
- *          token: ...
+ *          accessToken: ...
  *          refreshToken: ...
  *  "401":
  *    description: Unauthorized
@@ -114,7 +114,7 @@ export function signup(req, res, next) {
  *          $ref: "#/components/schemas/errorMessage"
  */
 // IN : { email: string, password: string }
-// OUT: { userId: string, token: string, refreshToken: string }
+// OUT: { userId: string, accessToken: string, refreshToken: string }
 export function login(req, res, next) {
     const userEmail = req.body.email;
     prisma.user.findUnique({ where: { email: userEmail }, select: { id: true, password: true }})
@@ -128,7 +128,6 @@ export function login(req, res, next) {
             if (valid) {
                 // Store an id (relative to the refresh token) in the database with the user's information (userId) and expiration date
                 const refreshTokenExpirationTimestamp = jwtUtils.getRefreshTokenInitialExpirationTimestamp();
-                // const refreshTokenExpirationDate = new Date(getRefreshTokenInitialExpirationTimestamp() * 1000);
                 prisma.refreshToken.create({
                     data: {
                         expirationDate: new Date(refreshTokenExpirationTimestamp * 1000),
@@ -143,9 +142,14 @@ export function login(req, res, next) {
                     // Before sending the response, delete the old refresh token id (if login was send with a token)
                     const refreshTokenAuth = req.headers.authorization;
                     if (refreshTokenAuth !== undefined) {
-                        const oldRefreshToken = refreshTokenAuth.split(' ')[1];
-                        // Here, no matter if the token is valid or not, we just want to revoke this old token by its id
-                        const oldRefreshTokenId = jwtUtils.decodePayload(oldRefreshToken).refreshTokenId;
+                        const oldRefreshTokenPayload = jwtUtils.decodePayload(refreshTokenAuth.split(' ')[1]);
+                        if (oldRefreshTokenPayload === null) {
+                            return handleError(res, 401, new Error('Invalid optional token provided (for login)'));
+                        }
+                        const oldRefreshTokenId = oldRefreshTokenPayload.refreshTokenId;
+                        if (oldRefreshTokenId === undefined) {
+                            return handleError(res, 401, new Error('No refreshTokenId in optional token provided (for login)'));
+                        }
                         prisma.refreshToken.findUnique({ where: { id: oldRefreshTokenId } })
                         .then(oldRefreshTokenData => {
                             if (oldRefreshTokenData) {
@@ -158,7 +162,7 @@ export function login(req, res, next) {
                     // Send the response
                     res.status(200).json({
                         userId: user.id,
-                        token: accessToken,
+                        accessToken: accessToken,
                         refreshToken: refreshToken
                     });
                     // Update the login rate limiters (only if the bcrypt.compare function doesn't fail)
@@ -244,7 +248,11 @@ export async function refresh(req, res, next) {
             throw new Error('No token provided (for refresh)');
         }
         const refreshToken = refreshTokenAuth.split(' ')[1];
-        const refreshTokenId = jwtUtils.decodePayload(refreshToken).refreshTokenId;
+        const refreshTokenPayload = jwtUtils.decodePayload(refreshToken);
+        if (refreshTokenPayload === null) {
+            throw new Error('Invalid token provided (for refresh)');
+        }
+        const refreshTokenId = refreshTokenPayload.refreshTokenId;
         if (refreshTokenId === undefined) {
             throw new Error('Incomplete (missing data) token (for refresh)');
         }
@@ -277,12 +285,16 @@ export async function refresh(req, res, next) {
                 var newRefreshToken = jwtUtils.signRefresh({ userId: user.id, refreshTokenId: refreshTokenData.id }, user.email, expirationTimestamp);
                 res.status(200).json({
                     userId: user.id,
-                    token: accessToken,
+                    accessToken: accessToken,
                     refreshToken: newRefreshToken
                 });
             } else {
                 // If the refresh token is not found on database : it has already been used (or it has expired)
-                const decodedPayloadUserId = jwtUtils.decodePayload(refreshToken).userId;
+                const refreshTokenPayload = jwtUtils.decodePayload(refreshToken);
+                if (refreshTokenPayload === null) {
+                    return handleError(res, 401, new Error("Invalid token provided (for refresh)"));
+                }
+                const decodedPayloadUserId = refreshTokenPayload.userId;
                 // Get email from database with the user ID
                 prisma.user.findUnique({ where: { id: decodedPayloadUserId }, select: { email: true }})
                 .then(user => {
@@ -342,8 +354,11 @@ export async function logout(req, res, next) {
         if (refreshTokenAuth === undefined) {
             throw new Error('No token provided (for logout)');
         }
-        const refreshToken = refreshTokenAuth.split(' ')[1];
-        const decodedPayloadRefreshTokenId = jwtUtils.decodePayload(refreshToken).refreshTokenId;
+        const refreshTokenPayload = jwtUtils.decodePayload(refreshTokenAuth.split(' ')[1]);
+        if (refreshTokenPayload === null) {
+            throw new Error('Invalid optional token provided (for logout)');
+        }
+        const decodedPayloadRefreshTokenId = refreshTokenPayload.refreshTokenId;
         // Delete the refresh token in database, no matter if it is valid or not
         if (decodedPayloadRefreshTokenId !== undefined) {
             prisma.refreshToken.delete({ where: { id: decodedPayloadRefreshTokenId } })
