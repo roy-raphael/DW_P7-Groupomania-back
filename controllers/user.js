@@ -41,10 +41,16 @@ import * as jwtUtils from '../utils/jwt-utils.js'
 // IN : { email: string, password: string }
 // OUT: { message: string }
 export function signup(req, res, next) {
-    bcrypt.hash(req.body.password, 10)
+    // Sanity check
+    const userEmail = req.body.email;
+    if (userEmail == null) return handleError(res, 400, new Error('No email provided'));
+    const userPassword = req.body.password;
+    if (userEmail == null) return handleError(res, 400, new Error('No password provided'));
+    // Core of the controller
+    bcrypt.hash(userPassword, 10)
     .then(hash => {
         const user = {
-            email: req.body.email,
+            email: userEmail,
             password: hash
         };
         prisma.user.create({
@@ -94,6 +100,12 @@ export function signup(req, res, next) {
  *          userId: e5268c386c9b17c39bd6a17d
  *          accessToken: ...
  *          refreshToken: ...
+ *  "400":
+ *    description: Bad request
+ *    content:
+ *      application/json:
+ *        schema:
+ *          $ref: "#/components/schemas/errorMessage"
  *  "401":
  *    description: Unauthorized
  *    content:
@@ -113,17 +125,23 @@ export function signup(req, res, next) {
  *        schema:
  *          $ref: "#/components/schemas/errorMessage"
  */
-// IN : { email: string, password: string }
+// IN : { email: string, password: string } OR { email: string, password: string, refreshToken: string }
 // OUT: { userId: string, accessToken: string, refreshToken: string }
 export function login(req, res, next) {
+    // Sanity check
     const userEmail = req.body.email;
+    if (userEmail == null) return handleError(res, 400, new Error('No email provided'));
+    const userPassword = req.body.password;
+    if (userEmail == null) return handleError(res, 400, new Error('No password provided'));
+    const userRefreshToken = req.body.refreshToken; // optional field
+    // Core of the controller
     prisma.user.findUnique({ where: { email: userEmail }, select: { id: true, password: true }})
     .then(async user => {
         if (!user) {
             return handleError(res, 401, new Error('User not found'));
         }
         // Sign in the user
-        bcrypt.compare(req.body.password, user.password)
+        bcrypt.compare(userPassword, user.password)
         .then(async valid => {
             if (valid) {
                 // Store an id (relative to the refresh token) in the database with the user's information (userId) and expiration date
@@ -140,15 +158,14 @@ export function login(req, res, next) {
                     var accessToken = jwtUtils.sign({ userId: user.id }, userEmail);
                     var refreshToken = jwtUtils.signRefresh({ userId: user.id, refreshTokenId: refreshTokenData.id }, userEmail, refreshTokenExpirationTimestamp);
                     // Before sending the response, delete the old refresh token id (if login was send with a token)
-                    const refreshTokenAuth = req.headers.authorization;
-                    if (refreshTokenAuth !== undefined) {
-                        const oldRefreshTokenPayload = jwtUtils.decodePayload(refreshTokenAuth.split(' ')[1]);
+                    if (userRefreshToken) {
+                        const oldRefreshTokenPayload = jwtUtils.decodePayload(userRefreshToken);
                         if (oldRefreshTokenPayload === null) {
-                            return handleError(res, 401, new Error('Invalid optional token provided (for login)'));
+                            return handleError(res, 400, new Error('Invalid optional token provided (for login)'));
                         }
                         const oldRefreshTokenId = oldRefreshTokenPayload.refreshTokenId;
                         if (oldRefreshTokenId === undefined) {
-                            return handleError(res, 401, new Error('No refreshTokenId in optional token provided (for login)'));
+                            return handleError(res, 400, new Error('No refreshTokenId in optional token provided (for login)'));
                         }
                         prisma.refreshToken.findUnique({ where: { id: oldRefreshTokenId } })
                         .then(oldRefreshTokenData => {
@@ -206,6 +223,19 @@ export function login(req, res, next) {
  *  and sends back a new access token and a new refresh token if all is fine.
  *  Else, revokes the refresh token ID in the database, so other users with the same
  *  refresh token ID won't be able to get access tokens from this refresh token ID.
+ * requestBody:
+ *  required: true
+ *  content:
+ *    application/json:
+ *      schema:
+ *        type: object
+ *        properties:
+ *          refreshToken:
+ *            type: string
+ *            description: signed refresh token (containing the user ID and the refresh token ID stored in the database)
+ *      example:
+ *        refreshToken: ...
+ * security: []
  * responses:
  *  "200":
  *    description: OK
@@ -227,6 +257,12 @@ export function login(req, res, next) {
  *          userId: e5268c386c9b17c39bd6a17d
  *          accessToken: ...
  *          refreshToken: ...
+ *  "400":
+ *    description: Bad Request
+ *    content:
+ *      application/json:
+ *        schema:
+ *          $ref: "#/components/schemas/errorMessage"
  *  "401":
  *    description: Unauthorized
  *    content:
@@ -240,14 +276,14 @@ export function login(req, res, next) {
  *        schema:
  *          $ref: "#/components/schemas/errorMessage"
  */
+// IN : { refreshToken: string }
 // OUT: { userId: string, accessToken: string, refreshToken: string }
 export async function refresh(req, res, next) {
+    // Sanity check
+    const refreshToken = req.body.refreshToken;
+    if (refreshToken == null) return handleError(res, 400, new Error('No refresh token provided'));
+    // Core of the controller
     try {
-        const refreshTokenAuth = req.headers.authorization;
-        if (refreshTokenAuth === undefined) {
-            throw new Error('No token provided (for refresh)');
-        }
-        const refreshToken = refreshTokenAuth.split(' ')[1];
         const refreshTokenPayload = jwtUtils.decodePayload(refreshToken);
         if (refreshTokenPayload === null) {
             throw new Error('Invalid token provided (for refresh)');
@@ -266,7 +302,7 @@ export async function refresh(req, res, next) {
             if (refreshTokenData) {
                 const user = refreshTokenData.user;
                 if (!user) {
-                    return handleError(res, 500, new Error("No user exists for this token"));
+                    return handleError(res, 401, new Error("No user exists for this token"));
                 }
                 try {
                     jwtUtils.verifyRefresh(refreshToken, user.email);
@@ -292,14 +328,14 @@ export async function refresh(req, res, next) {
                 // If the refresh token is not found on database : it has already been used (or it has expired)
                 const refreshTokenPayload = jwtUtils.decodePayload(refreshToken);
                 if (refreshTokenPayload === null) {
-                    return handleError(res, 401, new Error("Invalid token provided (for refresh)"));
+                    return handleError(res, 400, new Error("Invalid token provided (for refresh)"));
                 }
                 const decodedPayloadUserId = refreshTokenPayload.userId;
                 // Get email from database with the user ID
                 prisma.user.findUnique({ where: { id: decodedPayloadUserId }, select: { email: true }})
                 .then(user => {
                     if (!user) {
-                        return handleError(res, 401, new Error("Refresh token invalid"));
+                        return handleError(res, 401, new Error("No user exists for this token"));
                     }
                     try {
                         jwtUtils.verifyRefresh(refreshToken, user.email);
@@ -321,7 +357,7 @@ export async function refresh(req, res, next) {
         })
         .catch(error => handleError(res, 500, error));
     } catch(error) {
-        handleError(res, 401, error);
+        handleError(res, 400, error);
     }
 }
 
@@ -332,11 +368,24 @@ export async function refresh(req, res, next) {
  * description: >
  *  Checks the refresh token payload and revokes its ID in the database, so other users with
  *  the same refresh token ID won't be able to get access tokens from this refresh token ID.
+ * requestBody:
+ *  required: true
+ *  content:
+ *    application/json:
+ *      schema:
+ *        type: object
+ *        properties:
+ *          refreshToken:
+ *            type: string
+ *            description: signed refresh token (containing the user ID and the refresh token ID stored in the database)
+ *      example:
+ *        refreshToken: ...
+ * security: []
  * responses:
  *  "204":
  *    description: OK
- *  "401":
- *    description: Unauthorized
+ *  "400":
+ *    description: Bad Request
  *    content:
  *      application/json:
  *        schema:
@@ -348,15 +397,16 @@ export async function refresh(req, res, next) {
  *        schema:
  *          $ref: "#/components/schemas/errorMessage"
  */
+// IN : { refreshToken: string }
 export async function logout(req, res, next) {
+    // Sanity check
+    const refreshToken = req.body.refreshToken;
+    if (refreshToken == null) return handleError(res, 400, new Error('No refresh token provided'));
+    // Core of the controller
     try {
-        const refreshTokenAuth = req.headers.authorization;
-        if (refreshTokenAuth === undefined) {
-            throw new Error('No token provided (for logout)');
-        }
-        const refreshTokenPayload = jwtUtils.decodePayload(refreshTokenAuth.split(' ')[1]);
+        const refreshTokenPayload = jwtUtils.decodePayload(refreshToken);
         if (refreshTokenPayload === null) {
-            throw new Error('Invalid optional token provided (for logout)');
+            throw new Error('Invalid token provided (for logout)');
         }
         const decodedPayloadRefreshTokenId = refreshTokenPayload.refreshTokenId;
         // Delete the refresh token in database, no matter if it is valid or not
@@ -368,6 +418,6 @@ export async function logout(req, res, next) {
             throw new Error('No refreshTokenId in token provided (for logout)');
         }
     } catch(error) {
-        handleError(res, 401, error);
+        handleError(res, 400, error);
     }
 }
