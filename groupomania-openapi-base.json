@@ -70,7 +70,39 @@
           "password": {
             "type": "string",
             "description": "hashed user password"
+          },
+          "refreshToken": {
+            "type": "string",
+            "description": "refreshToken"
           }
+        },
+        "required": ["email", "password"],
+        "example": {
+          "email":"my-email-adress@email.com",
+          "password":"MY-p@ssw0rd2"
+        }
+      },
+      "user-credentials": {
+        "type": "object",
+        "description": "data relative to credentials sent back to a user after login or refresh (object structure -> user-credentials schema)",
+        "properties": {
+          "userId": {
+            "type": "string",
+            "description": "ID of the user (from the database)"
+          },
+          "accessToken": {
+            "type": "string",
+            "description": "signed access token (containing the user ID)"
+          },
+          "refreshToken": {
+            "type": "string",
+            "description": "signed refresh token (containing the user ID and the refresh token ID stored in the database)"
+          }
+        },
+        "example": {
+          "userId":"e5268c386c9b17c39bd6a17d",
+          "accessToken":"string",
+          "refreshToken":"string"
         }
       },
       "post": {

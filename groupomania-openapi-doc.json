@@ -49,37 +49,24 @@
             }
           }
         },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
+        "security": [],
         "responses": {
           "200": {
             "description": "OK",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "userId": {
-                      "type": "string",
-                      "description": "ID of the user (from the database)"
-                    },
-                    "token": {
-                      "type": "string",
-                      "description": "signed access token (containing the user ID)"
-                    },
-                    "refreshToken": {
-                      "type": "string",
-                      "description": "signed refresh token (containing the user ID and the refresh token ID stored in the database)"
-                    }
-                  }
-                },
-                "example": {
-                  "userId": "e5268c386c9b17c39bd6a17d",
-                  "token": "...",
-                  "refreshToken": "..."
+                  "$ref": "#/components/schemas/user-credentials"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/errorMessage"
                 }
               }
             }
@@ -124,12 +111,32 @@
         ],
         "summary": "Disconnexion of a user to revoke the current refresh token",
         "description": "Checks the refresh token payload and revokes its ID in the database, so other users with the same refresh token ID won't be able to get access tokens from this refresh token ID.\n",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "refreshToken": {
+                    "type": "string",
+                    "description": "signed refresh token (containing the user ID and the refresh token ID stored in the database)"
+                  }
+                }
+              },
+              "example": {
+                "refreshToken": "..."
+              }
+            }
+          }
+        },
+        "security": [],
         "responses": {
           "204": {
             "description": "OK"
           },
-          "401": {
-            "description": "Unauthorized",
+          "400": {
+            "description": "Bad Request",
             "content": {
               "application/json": {
                 "schema": {
@@ -158,32 +165,43 @@
         ],
         "summary": "Retrieve a new access token from a refresh token",
         "description": "Checks the refresh token validity and its validity in the database, and sends back a new access token and a new refresh token if all is fine. Else, revokes the refresh token ID in the database, so other users with the same refresh token ID won't be able to get access tokens from this refresh token ID.\n",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "refreshToken": {
+                    "type": "string",
+                    "description": "signed refresh token (containing the user ID and the refresh token ID stored in the database)"
+                  }
+                }
+              },
+              "example": {
+                "refreshToken": "..."
+              }
+            }
+          }
+        },
+        "security": [],
         "responses": {
           "200": {
             "description": "OK",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "userId": {
-                      "type": "string",
-                      "description": "ID of the user (from the database)"
-                    },
-                    "accessToken": {
-                      "type": "string",
-                      "description": "signed access token (containing the user ID)"
-                    },
-                    "refreshToken": {
-                      "type": "string",
-                      "description": "signed refresh token (containing the user ID and the refresh token ID stored in the database)"
-                    }
-                  }
-                },
-                "example": {
-                  "userId": "e5268c386c9b17c39bd6a17d",
-                  "accessToken": "...",
-                  "refreshToken": "..."
+                  "$ref": "#/components/schemas/user-credentials"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/errorMessage"
                 }
               }
             }
@@ -866,7 +884,42 @@
           "password": {
             "type": "string",
             "description": "hashed user password"
+          },
+          "refreshToken": {
+            "type": "string",
+            "description": "refreshToken"
           }
+        },
+        "required": [
+          "email",
+          "password"
+        ],
+        "example": {
+          "email": "my-email-adress@email.com",
+          "password": "MY-p@ssw0rd2"
+        }
+      },
+      "user-credentials": {
+        "type": "object",
+        "description": "data relative to credentials sent back to a user after login or refresh (object structure -> user-credentials schema)",
+        "properties": {
+          "userId": {
+            "type": "string",
+            "description": "ID of the user (from the database)"
+          },
+          "accessToken": {
+            "type": "string",
+            "description": "signed access token (containing the user ID)"
+          },
+          "refreshToken": {
+            "type": "string",
+            "description": "signed refresh token (containing the user ID and the refresh token ID stored in the database)"
+          }
+        },
+        "example": {
+          "userId": "e5268c386c9b17c39bd6a17d",
+          "accessToken": "string",
+          "refreshToken": "string"
         }
       },
       "post": {

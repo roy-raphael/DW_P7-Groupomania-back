@@ -77,29 +77,14 @@ export function signup(req, res, next) {
  *    application/json:
  *      schema:
  *        $ref: "#/components/schemas/user"
- * security:
- *  - {bearerAuth: []}
+ * security: []
  * responses:
  *  "200":
  *    description: OK
  *    content:
  *      application/json:
  *        schema:
- *          type: object
- *          properties:
- *            userId:
- *              type: string
- *              description: ID of the user (from the database)
- *            accessToken:
- *              type: string
- *              description: signed access token (containing the user ID)
- *            refreshToken:
- *              type: string
- *              description: signed refresh token (containing the user ID and the refresh token ID stored in the database)
- *        example:
- *          userId: e5268c386c9b17c39bd6a17d
- *          accessToken: ...
- *          refreshToken: ...
+ *          $ref: "#/components/schemas/user-credentials"
  *  "400":
  *    description: Bad request
  *    content:
@@ -242,21 +227,7 @@ export function login(req, res, next) {
  *    content:
  *      application/json:
  *        schema:
- *          type: object
- *          properties:
- *            userId:
- *              type: string
- *              description: ID of the user (from the database)
- *            accessToken:
- *              type: string
- *              description: signed access token (containing the user ID)
- *            refreshToken:
- *              type: string
- *              description: signed refresh token (containing the user ID and the refresh token ID stored in the database)
- *        example:
- *          userId: e5268c386c9b17c39bd6a17d
- *          accessToken: ...
- *          refreshToken: ...
+ *          $ref: "#/components/schemas/user-credentials"
  *  "400":
  *    description: Bad Request
  *    content:
