@@ -42,7 +42,6 @@ export function getAllPosts(req, res, next) {
         include: { 
             author: {
                 select: {
-                    id: true,
                     firstName: true,
                     surName: true,
                     pseudo: true
@@ -191,7 +190,6 @@ export function getOnePost(req, res, next) {
         include: { 
             author: {
                 select: {
-                    id: true,
                     firstName: true,
                     surName: true,
                     pseudo: true
