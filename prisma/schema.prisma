@@ -29,7 +29,7 @@ model Post {
   id        String    @id @default(cuid())
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
-  text      String
+  text      String    @db.Text
   imageUrl  String?
   author    User      @relation("WrittenPosts", fields: [authorId], references: [id])
   authorId  String
