@@ -142,13 +142,19 @@ export function createPost(req, res, next) {
             imageUrl: `${req.protocol}://${req.get('host')}/${POSTS_IMAGES_SAVE_PATH}/${req.file.filename}`
         } : { ...req.body };
     if ( req.file && !postObject.imageAlt ) {
+        deleteImage(postObject.imageUrl);
         handleError(res, 400, new Error("No imageAlt property found (during post creation with an image file)"));
     } else {
         prisma.post.create({
             data: postObject
         })
         .then(() => res.status(201).json({ message: 'Post created'}))
-        .catch(error => handleError(res, 400, error));
+        .catch(error => {
+            if (req.file) {
+                deleteImage(postObject.imageUrl);
+            }
+            handleError(res, 400, error)
+        });
     }
 }
 
@@ -308,6 +314,7 @@ export function modifyPost(req, res, next) {
             imageUrl: `${req.protocol}://${req.get('host')}/${POSTS_IMAGES_SAVE_PATH}/${req.file.filename}`
         } : { ...req.body };
     if ( req.file && !postObject.imageAlt ) {
+        deleteImage(postObject.imageUrl);
         handleError(res, 400, new Error("No imageAlt property found (during post modification with an image file)"));
     } else {
         prisma.post.update({
@@ -316,20 +323,16 @@ export function modifyPost(req, res, next) {
         })
         .then(() => {
             if (req.file && req.post.imageUrl) {
-                var filename = req.post.imageUrl.split(`/${POSTS_IMAGES_SAVE_PATH}/`)[1];
-                if (filename === undefined) {
-                    console.error(new Error("No file found in imageUrl : " + req.post.imageUrl));
-                } else {
-                    try {
-                        fs.unlinkSync(`${POSTS_IMAGES_SAVE_PATH}/${filename}`);
-                    } catch (error) {
-                        console.error(error);
-                    }
-                }
+                deleteImage(req.post.imageUrl);
             }
             res.status(200).json({ message: 'Post updated'});
         })
-        .catch(error => handleError(res, 400, error));
+        .catch(error => {
+            if (req.file) {
+                deleteImage(postObject.imageUrl);
+            }
+            handleError(res, 400, error)
+        });
     }
 }
 
@@ -377,16 +380,7 @@ export function modifyPost(req, res, next) {
 // OUT: { message: String }
 export function deletePost(req, res, next) {
     if (req.post.imageUrl) {
-        const filename = req.post.imageUrl.split(`/${POSTS_IMAGES_SAVE_PATH}/`)[1];
-        if (filename === undefined) {
-            console.error(new Error("No file found in imageUrl : " + req.post.imageUrl));
-        } else {
-            try {
-                fs.unlinkSync(`${POSTS_IMAGES_SAVE_PATH}/${filename}`);
-            } catch (error) {
-                console.error(error);
-            }
-        }
+        deleteImage(req.post.imageUrl);
     }
     prisma.post.delete({ where: { id: req.params.id } })
     .then(() => res.status(200).json({ message: 'Post deleted'}))
@@ -584,4 +578,17 @@ export function likePost(req, res, next) {
         .catch(error => handleError(res, 400, error));
     })
     .catch(error => handleError(res, 404, error));
+}
+
+function deleteImage(imageUrl) {
+    const filename = imageUrl.split(`/${POSTS_IMAGES_SAVE_PATH}/`)[1];
+    if (filename === undefined) {
+        console.error(new Error("No file found in imageUrl : " + imageUrl));
+    } else {
+        try {
+            fs.unlinkSync(`${POSTS_IMAGES_SAVE_PATH}/${filename}`);
+        } catch (error) {
+            console.error(error);
+        }
+    }
 }
