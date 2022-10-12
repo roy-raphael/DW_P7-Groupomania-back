@@ -31,6 +31,7 @@ model Post {
   updatedAt DateTime  @updatedAt
   text      String    @db.Text
   imageUrl  String?
+  imageAlt  String?
   author    User      @relation("WrittenPosts", fields: [authorId], references: [id])
   authorId  String
   likes     User[]    @relation("LikedPosts")
