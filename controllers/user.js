@@ -14,7 +14,34 @@ import * as jwtUtils from '../utils/jwt-utils.js'
  *  content:
  *    application/json:
  *      schema:
- *        $ref: "#/components/schemas/user"
+ *        type: object
+ *        description: data needed for a user creation
+ *        properties:
+ *          email:
+ *            type: string
+ *            description: e-mail adress of the user [unique]
+ *          password:
+ *            type: string
+ *            description: hashed user password
+ *          firstName:
+ *            type: string
+ *            description: first name of the user
+ *          surName:
+ *            type: string
+ *            description: surname of the user
+ *          pseudo:
+ *            type: string
+ *            description: pseudonym of the user
+ *        required:
+ *          - email
+ *          - password
+ *          - firstName
+ *          - surName
+ *        example:
+ *          email: my-email-adress@email.com
+ *          password: MY-p@ssw0rd2
+ *          firstName: Peter
+ *          surName: Smith
  * security: []
  * responses:
  *  "201":
@@ -38,7 +65,8 @@ import * as jwtUtils from '../utils/jwt-utils.js'
  *        schema:
  *          $ref: "#/components/schemas/errorMessage"
  */
-// IN : { email: string, password: string }
+// IN : { email: string, password: string, firstName: string, surName: string }
+//   OR { email: string, password: string, firstName: string, surName: string, pseudo: string }
 // OUT: { message: string }
 export function signup(req, res, next) {
     // Sanity check
@@ -84,7 +112,24 @@ export function signup(req, res, next) {
  *  content:
  *    application/json:
  *      schema:
- *        $ref: "#/components/schemas/user"
+ *        type: object
+ *        description: data needed for log in a user
+ *        properties:
+ *          email:
+ *            type: string
+ *            description: e-mail adress of the user [unique]
+ *          password:
+ *            type: string
+ *            description: hashed user password
+ *          refreshToken:
+ *            type: string
+ *            description: current refresh token of the user
+ *        required:
+ *          - email
+ *          - password
+ *        example:
+ *          email: my-email-adress@email.com
+ *          password: MY-p@ssw0rd2
  * security: []
  * responses:
  *  "200":

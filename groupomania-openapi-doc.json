@@ -44,7 +44,30 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/user"
+                "type": "object",
+                "description": "data needed for log in a user",
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "description": "e-mail adress of the user [unique]"
+                  },
+                  "password": {
+                    "type": "string",
+                    "description": "hashed user password"
+                  },
+                  "refreshToken": {
+                    "type": "string",
+                    "description": "current refresh token of the user"
+                  }
+                },
+                "required": [
+                  "email",
+                  "password"
+                ],
+                "example": {
+                  "email": "my-email-adress@email.com",
+                  "password": "MY-p@ssw0rd2"
+                }
               }
             }
           }
@@ -241,7 +264,42 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/user"
+                "type": "object",
+                "description": "data needed for a user creation",
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "description": "e-mail adress of the user [unique]"
+                  },
+                  "password": {
+                    "type": "string",
+                    "description": "hashed user password"
+                  },
+                  "firstName": {
+                    "type": "string",
+                    "description": "first name of the user"
+                  },
+                  "surName": {
+                    "type": "string",
+                    "description": "surname of the user"
+                  },
+                  "pseudo": {
+                    "type": "string",
+                    "description": "pseudonym of the user"
+                  }
+                },
+                "required": [
+                  "email",
+                  "password",
+                  "firstName",
+                  "surName"
+                ],
+                "example": {
+                  "email": "my-email-adress@email.com",
+                  "password": "MY-p@ssw0rd2",
+                  "firstName": "Peter",
+                  "surName": "Smith"
+                }
               }
             }
           }
@@ -873,39 +931,46 @@
         "description": "A text message describing an error",
         "example": "Error during the request processing"
       },
-      "user": {
-        "type": "object",
-        "description": "data relative to a user (object structure -> user schema)",
-        "properties": {
-          "email": {
-            "type": "string",
-            "description": "e-mail adress of the user [unique]"
-          },
-          "password": {
-            "type": "string",
-            "description": "hashed user password"
-          },
-          "refreshToken": {
-            "type": "string",
-            "description": "refreshToken"
-          }
-        },
-        "required": [
-          "email",
-          "password"
-        ],
-        "example": {
-          "email": "my-email-adress@email.com",
-          "password": "MY-p@ssw0rd2"
-        }
-      },
       "user-credentials": {
         "type": "object",
         "description": "data relative to credentials sent back to a user after login or refresh (object structure -> user-credentials schema)",
         "properties": {
-          "userId": {
-            "type": "string",
-            "description": "ID of the user (from the database)"
+          "user": {
+            "type": "object",
+            "description": "User data (from the database)",
+            "properties": {
+              "id": {
+                "type": "string",
+                "description": "ID of the user that created the post"
+              },
+              "email": {
+                "type": "string",
+                "description": "E-mail of the user that created the post"
+              },
+              "firstName": {
+                "type": "string",
+                "description": "First name of the user that created the post"
+              },
+              "surName": {
+                "type": "string",
+                "description": "Surname of the user that created the post"
+              },
+              "pseudo": {
+                "type": "string",
+                "description": "Pseudonym of the user that created the post"
+              },
+              "role": {
+                "type": "string",
+                "description": "Role (user or admin) of the user that created the post"
+              }
+            },
+            "required": [
+              "id",
+              "email",
+              "firstName",
+              "surName",
+              "role"
+            ]
           },
           "accessToken": {
             "type": "string",
@@ -917,7 +982,14 @@
           }
         },
         "example": {
-          "userId": "e5268c386c9b17c39bd6a17d",
+          "userId": {
+            "id": "e5268c386c9b17c39bd6a17d",
+            "email": "my-email-adress@email.com",
+            "firstName": "Peter",
+            "surName": "Smith",
+            "pseudo": "Pete",
+            "role": "User"
+          },
           "accessToken": "string",
           "refreshToken": "string"
         }
@@ -951,6 +1023,28 @@
           "authorId": {
             "type": "string",
             "description": "ID of the user that created the post"
+          },
+          "author": {
+            "type": "object",
+            "description": "User that created the post",
+            "properties": {
+              "firstName": {
+                "type": "string",
+                "description": "First name of the user that created the post"
+              },
+              "surName": {
+                "type": "string",
+                "description": "Surname of the user that created the post"
+              },
+              "pseudo": {
+                "type": "string",
+                "description": "Pseudonym of the user that created the post"
+              }
+            },
+            "required": [
+              "firstName",
+              "surName"
+            ]
           },
           "likes": {
             "type": "array",
