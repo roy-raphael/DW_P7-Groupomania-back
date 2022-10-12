@@ -46,13 +46,21 @@ export function signup(req, res, next) {
     if (userEmail == null) return handleError(res, 400, new Error('No email provided'));
     const userPassword = req.body.password;
     if (userEmail == null) return handleError(res, 400, new Error('No password provided'));
+    const userFirstName = req.body.firstName;
+    if (userEmail == null) return handleError(res, 400, new Error('No firstName provided'));
+    const userSurName = req.body.surName;
+    if (userEmail == null) return handleError(res, 400, new Error('No surName provided'));
+    const userPseudo = req.body.pseudo; // optional
     // Core of the controller
     bcrypt.hash(userPassword, 10)
     .then(hash => {
-        const user = {
+        var user = {
             email: userEmail,
-            password: hash
+            password: hash,
+            firstName: userFirstName,
+            surName: userSurName
         };
+        if (userPseudo) user['pseudo'] = userPseudo;
         prisma.user.create({
             data: user
         })
@@ -120,13 +128,16 @@ export function login(req, res, next) {
     if (userEmail == null) return handleError(res, 400, new Error('No password provided'));
     const userRefreshToken = req.body.refreshToken; // optional field
     // Core of the controller
-    prisma.user.findUnique({ where: { email: userEmail }, select: { id: true, password: true }})
-    .then(async user => {
-        if (!user) {
+    prisma.user.findUnique({ where: { email: userEmail }, select: { id: true, email: true, password: true, firstName: true, surName: true, pseudo: true, role: true }})
+    .then(async userWithPassword => {
+        if (!userWithPassword) {
             return handleError(res, 401, new Error('User not found'));
         }
+        var user = {...userWithPassword};
+        delete user['password'];
+        if (! user.pseudo) delete user['pseudo'];
         // Sign in the user
-        bcrypt.compare(userPassword, user.password)
+        bcrypt.compare(userPassword, userWithPassword.password)
         .then(async valid => {
             if (valid) {
                 // Store an id (relative to the refresh token) in the database with the user's information (userId) and expiration date
@@ -162,11 +173,7 @@ export function login(req, res, next) {
                         .catch(error => console.error("Refresh token data could not be deleted from database : " + error));
                     }
                     // Send the response
-                    res.status(200).json({
-                        userId: user.id,
-                        accessToken: accessToken,
-                        refreshToken: refreshToken
-                    });
+                    res.status(200).json({ user, accessToken, refreshToken });
                     // Update the login rate limiters (only if the bcrypt.compare function doesn't fail)
                     await loginConsecutiveLimiter.delete(userEmail);
                 })
@@ -251,11 +258,11 @@ export function login(req, res, next) {
 // OUT: { userId: string, accessToken: string, refreshToken: string }
 export async function refresh(req, res, next) {
     // Sanity check
-    const refreshToken = req.body.refreshToken;
-    if (refreshToken == null) return handleError(res, 400, new Error('No refresh token provided'));
+    const receivedRefreshToken = req.body.refreshToken;
+    if (receivedRefreshToken == null) return handleError(res, 400, new Error('No refresh token provided'));
     // Core of the controller
     try {
-        const refreshTokenPayload = jwtUtils.decodePayload(refreshToken);
+        const refreshTokenPayload = jwtUtils.decodePayload(receivedRefreshToken);
         if (refreshTokenPayload === null) {
             throw new Error('Invalid token provided (for refresh)');
         }
@@ -271,12 +278,14 @@ export async function refresh(req, res, next) {
         })
         .then(refreshTokenData => {
             if (refreshTokenData) {
-                const user = refreshTokenData.user;
-                if (!user) {
+                if (!refreshTokenData.user) {
                     return handleError(res, 401, new Error("No user exists for this token"));
                 }
+                var user = {...refreshTokenData.user};
+                const userEmail = user.email;
+                delete user['password'];
                 try {
-                    jwtUtils.verifyRefresh(refreshToken, user.email);
+                    jwtUtils.verifyRefresh(receivedRefreshToken, userEmail);
                 } catch(error) {
                     // If the token is expired : delete it from the database
                     if (jwtUtils.isErrorTokenExpired(error)) {
@@ -287,17 +296,13 @@ export async function refresh(req, res, next) {
                     return handleError(res, 401, new Error("Refresh token invalid"));
                 }
                 // The refresh token is valid : return new access and refresh tokens
-                var accessToken = jwtUtils.sign({ userId: user.id }, user.email);
+                var accessToken = jwtUtils.sign({ userId: user.id }, userEmail);
                 const expirationTimestamp = Math.round(refreshTokenData.expirationDate.getTime()/1000);
-                var newRefreshToken = jwtUtils.signRefresh({ userId: user.id, refreshTokenId: refreshTokenData.id }, user.email, expirationTimestamp);
-                res.status(200).json({
-                    userId: user.id,
-                    accessToken: accessToken,
-                    refreshToken: newRefreshToken
-                });
+                var refreshToken = jwtUtils.signRefresh({ userId: user.id, refreshTokenId: refreshTokenData.id }, userEmail, expirationTimestamp);
+                res.status(200).json({ user, accessToken, refreshToken });
             } else {
                 // If the refresh token is not found on database : it has already been used (or it has expired)
-                const refreshTokenPayload = jwtUtils.decodePayload(refreshToken);
+                const refreshTokenPayload = jwtUtils.decodePayload(receivedRefreshToken);
                 if (refreshTokenPayload === null) {
                     return handleError(res, 400, new Error("Invalid token provided (for refresh)"));
                 }
@@ -309,7 +314,7 @@ export async function refresh(req, res, next) {
                         return handleError(res, 401, new Error("No user exists for this token"));
                     }
                     try {
-                        jwtUtils.verifyRefresh(refreshToken, user.email);
+                        jwtUtils.verifyRefresh(receivedRefreshToken, user.email);
                         // If the token is valid, remove from the database all the refresh tokens for this user ID
                     } catch(error) {
                         if (jwtUtils.isErrorTokenExpired(error)) {
