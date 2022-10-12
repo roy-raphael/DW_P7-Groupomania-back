@@ -40,6 +40,14 @@ import {handleError} from '../utils/error-utils.js'
 export function getAllPosts(req, res, next) {
     prisma.post.findMany({
         include: { 
+            author: {
+                select: {
+                    id: true,
+                    firstName: true,
+                    surName: true,
+                    pseudo: true
+                }
+            },
             likes: {
                 select: {
                     id: true,
@@ -181,6 +189,14 @@ export function getOnePost(req, res, next) {
             id: req.params.id
         },
         include: { 
+            author: {
+                select: {
+                    id: true,
+                    firstName: true,
+                    surName: true,
+                    pseudo: true
+                }
+            },
             likes: {
                 select: {
                     id: true,
