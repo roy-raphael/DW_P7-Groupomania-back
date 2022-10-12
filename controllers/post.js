@@ -141,11 +141,15 @@ export function createPost(req, res, next) {
             ...JSON.parse(req.body.post),
             imageUrl: `${req.protocol}://${req.get('host')}/${POSTS_IMAGES_SAVE_PATH}/${req.file.filename}`
         } : { ...req.body };
-    prisma.post.create({
-        data: postObject
-    })
-    .then(() => res.status(201).json({ message: 'Post created'}))
-    .catch(error => handleError(res, 400, error));
+    if ( req.file && !postObject.imageAlt ) {
+        handleError(res, 400, new Error("No imageAlt property found (during post creation with an image file)"));
+    } else {
+        prisma.post.create({
+            data: postObject
+        })
+        .then(() => res.status(201).json({ message: 'Post created'}))
+        .catch(error => handleError(res, 400, error));
+    }
 }
 
 /*
@@ -303,26 +307,30 @@ export function modifyPost(req, res, next) {
             ...JSON.parse(req.body.post),
             imageUrl: `${req.protocol}://${req.get('host')}/${POSTS_IMAGES_SAVE_PATH}/${req.file.filename}`
         } : { ...req.body };
-    prisma.post.update({
-        where: { id: req.params.id },
-        data: postObject
-    })
-    .then(() => {
-        if (req.file && req.post.imageUrl) {
-            var filename = req.post.imageUrl.split(`/${POSTS_IMAGES_SAVE_PATH}/`)[1];
-            if (filename === undefined) {
-                console.error(new Error("No file found in imageUrl : " + req.post.imageUrl));
-            } else {
-                try {
-                    fs.unlinkSync(`${POSTS_IMAGES_SAVE_PATH}/${filename}`);
-                } catch (error) {
-                    console.error(error);
+    if ( req.file && !postObject.imageAlt ) {
+        handleError(res, 400, new Error("No imageAlt property found (during post modification with an image file)"));
+    } else {
+        prisma.post.update({
+            where: { id: req.params.id },
+            data: postObject
+        })
+        .then(() => {
+            if (req.file && req.post.imageUrl) {
+                var filename = req.post.imageUrl.split(`/${POSTS_IMAGES_SAVE_PATH}/`)[1];
+                if (filename === undefined) {
+                    console.error(new Error("No file found in imageUrl : " + req.post.imageUrl));
+                } else {
+                    try {
+                        fs.unlinkSync(`${POSTS_IMAGES_SAVE_PATH}/${filename}`);
+                    } catch (error) {
+                        console.error(error);
+                    }
                 }
             }
-        }
-        res.status(200).json({ message: 'Post updated'});
-    })
-    .catch(error => handleError(res, 400, error));
+            res.status(200).json({ message: 'Post updated'});
+        })
+        .catch(error => handleError(res, 400, error));
+    }
 }
 
 /*
