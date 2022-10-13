@@ -49,14 +49,12 @@ export function getAllPosts(req, res, next) {
             },
             likes: {
                 select: {
-                    id: true,
-                    email: true
+                    id: true
                 }
             },
             dislikes: {
                 select: {
-                    id: true,
-                    email: true
+                    id: true
                 }
             },
             comments: true
@@ -83,15 +81,12 @@ export function getAllPosts(req, res, next) {
  *    application/json:
  *      schema:
  *        $ref: "#/components/schemas/post-form"
- *      example:
- *        text: This is a post text
- *        authorId: e5268c386c9b17c39bd6a17d
  *    multipart/form-data:
  *      schema:
  *        type: object
  *        properties:
  *          post:
- *            $ref: "#/components/schemas/post-form"
+ *            $ref: "#/components/schemas/post-form-with-image"
  *          file:
  *            type: string
  *            format: binary
@@ -102,9 +97,7 @@ export function getAllPosts(req, res, next) {
  *    content:
  *      application/json:
  *        schema:
- *          type: string
- *          description: Post creation message
- *        example: Post created
+ *          $ref: "#/components/schemas/post"
  *  "400":
  *    description: Bad request
  *    content:
@@ -148,7 +141,7 @@ export function createPost(req, res, next) {
         prisma.post.create({
             data: postObject
         })
-        .then(() => res.status(201).json({ message: 'Post created'}))
+        .then(post => res.status(201).json(post))
         .catch(error => {
             if (req.file) {
                 deleteImage(postObject.imageUrl);
@@ -207,21 +200,24 @@ export function getOnePost(req, res, next) {
             },
             likes: {
                 select: {
-                    id: true,
-                    email: true
+                    id: true
                 }
             },
             dislikes: {
                 select: {
-                    id: true,
-                    email: true
+                    id: true
                 }
             },
             comments: true
         }
     })
-    .then(posts => res.status(200).json(posts))
-    .catch(error => handleError(res, 400, error));
+    .then(post => {
+        if (!post) {
+            return handleError(res, 404, new Error('Post not found'));
+        }
+        res.status(200).json(post)
+    })
+    .catch(error => handleError(res, 500, error));
 }
 
 /*
@@ -243,15 +239,12 @@ export function getOnePost(req, res, next) {
  *    application/json:
  *      schema:
  *        $ref: "#/components/schemas/post-form"
- *      example:
- *        text: This is an updated post text
- *        authorId: e5268c386c9b17c39bd6a17d
  *    multipart/form-data:
  *      schema:
  *        type: "object"
  *        properties:
  *          post:
- *            $ref: "#/components/schemas/post-form"
+ *            $ref: "#/components/schemas/post-form-with-image"
  *          file:
  *            type: string
  *            format: binary
@@ -262,9 +255,7 @@ export function getOnePost(req, res, next) {
  *    content:
  *      application/json:
  *        schema:
- *          type: string
- *          description: Post modification message
- *        example: Post updated
+ *          $ref: "#/components/schemas/post"
  *  "400":
  *    description: Bad request
  *    content:
@@ -321,11 +312,11 @@ export function modifyPost(req, res, next) {
             where: { id: req.params.id },
             data: postObject
         })
-        .then(() => {
+        .then(post => {
             if (req.file && req.post.imageUrl) {
                 deleteImage(req.post.imageUrl);
             }
-            res.status(200).json({ message: 'Post updated'});
+            res.status(200).json(post);
         })
         .catch(error => {
             if (req.file) {
@@ -417,9 +408,7 @@ export function deletePost(req, res, next) {
  *    content:
  *      application/json:
  *        schema:
- *          type: string
- *          description: Comment creation message
- *        example: Comment created
+ *          $ref: "#/components/schemas/comment"
  *  "400":
  *    description: Bad request
  *    content:
@@ -439,7 +428,7 @@ export function deletePost(req, res, next) {
  *        schema:
  *          $ref: "#/components/schemas/errorMessage"
  */
-// IN : { userId: String, like: Number }
+// IN : { text: String, authorId: String }
 // OUT: { message: String }
 export function commentPost(req, res, next) {
     prisma.comment.create({
@@ -448,7 +437,7 @@ export function commentPost(req, res, next) {
             postId: req.params.id
         }
     })
-    .then(() => res.status(201).json({ message: 'Comment created'}))
+    .then(comment => res.status(201).json(comment)) // TODO OpenAPI doc
     .catch(error => handleError(res, 400, error));
 }
 

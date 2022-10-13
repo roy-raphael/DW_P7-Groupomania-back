@@ -142,6 +142,10 @@
             "type": "string",
             "description": "Content (image URL) of the post"
           },
+          "imageAlt": {
+            "type": "string",
+            "description": "Content (image URL) of the post"
+          },
           "authorId": {
             "type": "string",
             "description": "ID of the user that created the post"
@@ -169,8 +173,14 @@
             "type": "array",
             "description": "Array of users (user IDs) that likes the post",
             "items": {
-              "type": "string",
-              "description": "ID of a user that likes the post"
+              "type": "object",
+              "description": "User that created the post",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "description": "ID of a user that likes the post"
+                }
+              }
             },
             "minItems": 0
           },
@@ -178,8 +188,14 @@
             "type": "array",
             "description": "Array of users (user IDs) that dislikes the post",
             "items": {
-              "type": "string",
-              "description": "ID of a user that likes the post"
+              "type": "object",
+              "description": "User that created the post",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "description": "ID of a user that dislikes the post"
+                }
+              }
             },
             "minItems": 0
           },
@@ -187,8 +203,7 @@
             "type": "array",
             "description": "Array of comments of the post",
             "items": {
-              "type": "string",
-              "description": "ID of a comment of the post"
+              "$ref": "#/components/schemas/comment"
             },
             "minItems": 0
           }
@@ -199,15 +214,24 @@
           "updatedAt":"2022-08-03T12:31:30.505Z",
           "text":"This is a post text",
           "imageUrl":"http://localhost:3000/images/Post1_image_20220701_162713.jpg",
+          "imageAlt":"This is the description of the image",
           "authorId":"e5268c386c9b17c39bd6a17d",
-          "likes":["c386c9b17c39be5268d6a17d","9b17c39be5268dc386c6a17d"],
-          "dislikes":["be5268dc386c6a9b17c3917d","a9b17c3917dbe5268dc386c6"],
-          "comments":["cl6doteaj0000l0mu3hjpxhfy","00l0mu3cl6doteaj00hjpxhfy"]
+          "likes":[{"id": "c386c9b17c39be5268d6a17d"},{"id": "9b17c39be5268dc386c6a17d"}],
+          "dislikes":[{"id": "be5268dc386c6a9b17c3917d"},{"id": "a9b17c3917dbe5268dc386c6"}],
+          "comments":[
+            {
+              "id": "cl977p9mb000at2vkmudnbxcp",
+              "createdAt": "2022-08-03T12:31:30.505Z",
+              "text": "This is a comment",
+              "authorId": "e5268c386c9b17c39bd6a17d",
+              "postId": "cl6dl8yq10022b4muffz9isxl"
+            }
+          ]
         }
       },
       "post-form": {
         "type": "object",
-        "description": "data to use to create the post (object structure -> post-form schema)",
+        "description": "data to use to create the post without image (object structure -> post-form schema)",
         "properties": {
           "text": {
             "type": "string",
@@ -221,6 +245,62 @@
         "example": {
           "text":"This is a post text",
           "authorId":"e5268c386c9b17c39bd6a17d"
+        }
+      },
+      "post-form-with-image": {
+        "type": "object",
+        "description": "data to use to create the post with image (object structure -> post-form-with-image schema)",
+        "properties": {
+          "text": {
+            "type": "string",
+            "description": "Content (text) of the post"
+          },
+          "authorId": {
+            "type": "string",
+            "description": "ID of the user that created the post"
+          },
+          "imageAlt": {
+            "type": "string",
+            "description": "Description (alternative text) of the image (required if an image is provided)"
+          }
+        },
+        "example": {
+          "text":"This is a post text",
+          "authorId":"e5268c386c9b17c39bd6a17d",
+          "imageAlt":"This is the description of the image"
+        }
+      },
+      "comment": {
+          "type": "object",
+          "description": "data relative to a comment (object structure -> comment schema)",
+          "properties": {
+            "id": {
+              "type": "string",
+              "description": "ID of the comment"
+            },
+            "createdAt": {
+              "type": "string",
+              "description": "Creation date of the comment"
+            },
+           "text": {
+              "type": "string",
+              "description": "Text of the comment"
+            },
+            "authorId": {
+              "type": "string",
+              "description": "ID of the author of the comment"
+            },
+            "postId": {
+              "type": "string",
+              "description": "ID of the post of the comment"
+            }
+          },
+        "example": {
+          "id": "cl977p9mb000at2vkmudnbxcp",
+          "createdAt": "2022-08-03T12:31:30.505Z",
+          "text": "This is a comment",
+          "authorId": "e5268c386c9b17c39bd6a17d",
+          "postId": "cl6dl8yq10022b4muffz9isxl"
         }
       }
     }
