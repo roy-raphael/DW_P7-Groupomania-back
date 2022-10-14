@@ -124,7 +124,7 @@ export function getAllPosts(req, res, next) {
  *          $ref: "#/components/schemas/errorMessage"
  */
 // IN : EITHER Post as JSON OR { post: String, image: File }
-// OUT: { message: String }
+// OUT: Single post (the one created)
 export function createPost(req, res, next) {
     if (req.fileValidationError) {
         return handleError(res, 415, new Error(req.fileValidationError));
@@ -294,7 +294,7 @@ export function getOnePost(req, res, next) {
  *          $ref: "#/components/schemas/errorMessage"
  */
 // IN : EITHER Post as JSON OR { post: String, image: File }
-// OUT: { message: String }
+// OUT: Single post (the one modified)
 export function modifyPost(req, res, next) {
     if (req.fileValidationError) {
         return handleError(res, 415, new Error(req.fileValidationError));
@@ -429,7 +429,7 @@ export function deletePost(req, res, next) {
  *          $ref: "#/components/schemas/errorMessage"
  */
 // IN : { text: String, authorId: String }
-// OUT: { message: String }
+// OUT: Single comment (the one created)
 export function commentPost(req, res, next) {
     prisma.comment.create({
         data: {
@@ -437,7 +437,7 @@ export function commentPost(req, res, next) {
             postId: req.params.id
         }
     })
-    .then(comment => res.status(201).json(comment)) // TODO OpenAPI doc
+    .then(comment => res.status(201).json(comment))
     .catch(error => handleError(res, 400, error));
 }
 
@@ -479,9 +479,7 @@ export function commentPost(req, res, next) {
  *    content:
  *      application/json:
  *        schema:
- *          type: string
- *          description: Post like status update message
- *        example: Post like status updated
+ *          $ref: "#/components/schemas/post"
  *  "400":
  *    description: Bad request
  *    content:
@@ -508,13 +506,13 @@ export function commentPost(req, res, next) {
  *          $ref: "#/components/schemas/errorMessage"
  */
 // IN : { userId: String, like: Number }
-// OUT: { message: String }
+// OUT: Single post (the one liked)
 export function likePost(req, res, next) {
     prisma.post.findUnique({ 
         where: {
             id: req.params.id
         },
-        include: { 
+        include: {
             likes: {
                 select: {
                     id: true
@@ -561,9 +559,29 @@ export function likePost(req, res, next) {
                     connect : dislikeConnect,
                     disconnect: dislikeDisconnect
                 }
+            },
+            include: { 
+                author: {
+                    select: {
+                        firstName: true,
+                        surName: true,
+                        pseudo: true
+                    }
+                },
+                likes: {
+                    select: {
+                        id: true
+                    }
+                },
+                dislikes: {
+                    select: {
+                        id: true
+                    }
+                },
+                comments: true
             }
         })
-        .then(() => res.status(200).json({ message: 'Post like status updated'}))
+        .then(post => res.status(200).json(post))
         .catch(error => handleError(res, 400, error));
     })
     .catch(error => handleError(res, 404, error));
