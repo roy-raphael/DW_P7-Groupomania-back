@@ -36,7 +36,7 @@ import {handleError} from '../utils/error-utils.js'
  *        schema:
  *          $ref: "#/components/schemas/errorMessage"
  */
-// OUT: Array of posts
+// OUT: Array of posts, with a descending order (more recent first)
 export function getAllPosts(req, res, next) {
     prisma.post.findMany({
         include: { 
@@ -58,7 +58,12 @@ export function getAllPosts(req, res, next) {
                 }
             },
             comments: true
-        }
+        },
+        orderBy: [
+            {
+                createdAt: 'desc',
+            }
+        ]
     })
     .then(posts => res.status(200).json(posts))
     .catch(error => handleError(res, 400, error));
