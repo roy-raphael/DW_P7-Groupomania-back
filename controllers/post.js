@@ -38,8 +38,12 @@ import {handleError} from '../utils/error-utils.js'
  */
 // OUT: Array of posts, with a descending order (more recent first)
 export function getAllPosts(req, res, next) {
+    const limit = parseInt(req.query.limit);
+    const before = req.query.before;
+    const prismaWhereContent = before ? { createdAt: { lt: before } } : undefined;
     prisma.post.findMany({
-        include: { 
+        where: prismaWhereContent,
+        include: {
             author: {
                 select: {
                     firstName: true,
@@ -63,7 +67,8 @@ export function getAllPosts(req, res, next) {
             {
                 createdAt: 'desc',
             }
-        ]
+        ],
+        take: limit ? limit : undefined
     })
     .then(posts => res.status(200).json(posts))
     .catch(error => handleError(res, 400, error));
