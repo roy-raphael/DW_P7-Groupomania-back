@@ -37,7 +37,7 @@ import {handleError} from '../utils/error-utils.js'
  *          $ref: "#/components/schemas/errorMessage"
  */
 // OUT: Array of posts, with a descending order (more recent first)
-export function getAllPosts(req, res, next) {
+export function getPosts(req, res, next) {
     const limit = parseInt(req.query.limit);
     const before = req.query.before;
     const prismaWhereContent = before ? { createdAt: { lt: before } } : undefined;

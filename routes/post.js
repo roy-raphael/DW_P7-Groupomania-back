@@ -7,7 +7,7 @@ import * as postCtrl  from '../controllers/post.js';
 
 const router = express.Router();
 
-router.get('/', auth, postCtrl.getAllPosts);
+router.get('/', auth, postCtrl.getPosts);
 router.post('/', auth, multer, resizeImage, postCtrl.createPost);
 router.get('/:id', auth, postCtrl.getOnePost);
 router.put('/:id', auth, postAuthorize, multer, resizeImage, postCtrl.modifyPost);
