@@ -12,6 +12,7 @@ router.post('/', auth, multer, resizeImage, postCtrl.createPost);
 router.get('/:id', auth, postCtrl.getOnePost);
 router.put('/:id', auth, postAuthorize, multer, resizeImage, postCtrl.modifyPost);
 router.delete('/:id', auth, postAuthorize, postCtrl.deletePost);
+router.get('/:id/comments', auth, postCtrl.getPostComments);
 router.post('/:id/comment', auth, postCtrl.commentPost);
 router.post('/:id/like', auth, postCtrl.likePost);
 

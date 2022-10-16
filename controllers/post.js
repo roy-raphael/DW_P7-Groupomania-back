@@ -40,6 +40,7 @@ import {handleError} from '../utils/error-utils.js'
 export function getPosts(req, res, next) {
     const limit = parseInt(req.query.limit);
     const before = req.query.before;
+    const commentsLimit = parseInt(req.query["comments-limit"]);
     const prismaWhereContent = before ? { createdAt: { lt: before } } : undefined;
     prisma.post.findMany({
         where: prismaWhereContent,
@@ -61,14 +62,26 @@ export function getPosts(req, res, next) {
                     id: true
                 }
             },
-            comments: true
+            comments: {
+                orderBy: [
+                    {
+                        createdAt: 'desc'
+                    }
+                ],
+                take: (commentsLimit != null && !isNaN(commentsLimit)) ? commentsLimit : undefined
+            },
+            _count: {
+                select: {
+                    comments: true
+                }
+            }
         },
         orderBy: [
             {
                 createdAt: 'desc',
             }
         ],
-        take: limit ? limit : undefined
+        take: (limit != null && !isNaN(limit)) ? limit : undefined
     })
     .then(posts => res.status(200).json(posts))
     .catch(error => handleError(res, 400, error));
@@ -196,6 +209,7 @@ export function createPost(req, res, next) {
  */
 // OUT: Single post
 export function getOnePost(req, res, next) {
+    const commentsLimit = parseInt(req.query["comments-limit"]);
     prisma.post.findUnique({ 
         where: {
             id: req.params.id
@@ -218,7 +232,19 @@ export function getOnePost(req, res, next) {
                     id: true
                 }
             },
-            comments: true
+            comments: {
+                orderBy: [
+                    {
+                        createdAt: 'desc'
+                    }
+                ],
+                take: (commentsLimit != null && !isNaN(commentsLimit)) ? commentsLimit : undefined
+            },
+            _count: {
+                select: {
+                    comments: true
+                }
+            }
         }
     })
     .then(post => {
@@ -386,6 +412,48 @@ export function deletePost(req, res, next) {
     prisma.post.delete({ where: { id: req.params.id } })
     .then(() => res.status(200).json({ message: 'Post deleted'}))
     .catch(error => handleError(res, 401, error));
+}
+
+/*
+ * @oas [get] /api/posts/{id}/comments
+ * tags: ["posts"]
+ * summary: Find comments for a post
+ * description: Returns an array of the comments of the post
+ * parameters:
+ *  - $ref: "#/components/parameters/postIdParam"
+ * responses:
+ *  "200":
+ *    description: OK
+ *    content:
+ *      application/json:
+ *        schema:
+ *          type: array
+ *          items:
+ *            $ref: "#/components/schemas/comment"
+ *  "400":
+ *    description: Bad request
+ *    content:
+ *      application/json:
+ *        schema:
+ *          $ref: "#/components/schemas/errorMessage"
+ */
+export function getPostComments(req, res, next) {
+    const limit = parseInt(req.query.limit);
+    const before = req.query.before;
+    prisma.comment.findMany({
+        where: {
+            postId: req.params.id,
+            createdAt: before ? { lt: before } : undefined
+        },
+        orderBy: [
+            {
+                createdAt: 'desc',
+            }
+        ],
+        take: (limit != null && !isNaN(limit)) ? limit : undefined
+    })
+    .then(comments => res.status(200).json(comments))
+    .catch(error => handleError(res, 400, error));
 }
 
 /*
