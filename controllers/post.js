@@ -238,6 +238,15 @@ export function getOnePost(req, res, next) {
                         createdAt: 'desc'
                     }
                 ],
+                include: {
+                    author: {
+                        select: {
+                            firstName: true,
+                            surName: true,
+                            pseudo: true
+                        }
+                    }
+                },
                 take: (commentsLimit != null && !isNaN(commentsLimit)) ? commentsLimit : undefined
             },
             _count: {
@@ -450,6 +459,15 @@ export function getPostComments(req, res, next) {
                 createdAt: 'desc',
             }
         ],
+        include: {
+            author: {
+                select: {
+                    firstName: true,
+                    surName: true,
+                    pseudo: true
+                }
+            }
+        },
         take: (limit != null && !isNaN(limit)) ? limit : undefined
     })
     .then(comments => res.status(200).json(comments))
