@@ -482,7 +482,7 @@ export function getPostComments(req, res, next) {
 }
 
 /*
- * @oas [post] /api/posts/{id}/comment
+ * @oas [post] /api/posts/{id}/comments
  * tags: ["posts"]
  * summary: Creation of a new comment to an existing post
  * description: >
