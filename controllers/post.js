@@ -146,17 +146,20 @@ export function getPosts(req, res, next) {
  *        schema:
  *          $ref: "#/components/schemas/errorMessage"
  */
-// IN : EITHER Post as JSON OR { post: String, image: File }
+// IN : EITHER { text: string } as json OR { post: String, image: File } WHERE post = {text: string, imageAlt: string}
 // OUT: Single post (the one created)
 export function createPost(req, res, next) {
     if (req.fileValidationError) {
         return handleError(res, 415, new Error(req.fileValidationError));
     }
+    const jsonBody = req.file ? JSON.parse(req.body.post) : req.body;
     const postObject = req.file ?
         {
-            ...JSON.parse(req.body.post),
-            imageUrl: `${req.protocol}://${req.get('host')}/${POSTS_IMAGES_SAVE_PATH}/${req.file.filename}`
-        } : { ...req.body };
+            text: jsonBody.text,
+            imageUrl: `${req.protocol}://${req.get('host')}/${POSTS_IMAGES_SAVE_PATH}/${req.file.filename}`,
+            imageAlt: jsonBody.imageAlt,
+            authorId: req.auth.userId
+        } : { text: req.body.text, authorId: req.auth.userId };
     if ( req.file && !postObject.imageAlt ) {
         deleteImage(postObject.imageUrl);
         handleError(res, 400, new Error("No imageAlt property found (during post creation with an image file)"));
@@ -338,17 +341,20 @@ export function getOnePost(req, res, next) {
  *        schema:
  *          $ref: "#/components/schemas/errorMessage"
  */
-// IN : EITHER Post as JSON OR { post: String, image: File }
+// IN : EITHER { text: string } as json OR { post: String, image: File } WHERE post = {text: string, imageAlt: string}
 // OUT: Single post (the one modified)
 export function modifyPost(req, res, next) {
     if (req.fileValidationError) {
         return handleError(res, 415, new Error(req.fileValidationError));
     }
+    const jsonBody = req.file ? JSON.parse(req.body.post) : req.body;
     const postObject = req.file ?
         {
-            ...JSON.parse(req.body.post),
-            imageUrl: `${req.protocol}://${req.get('host')}/${POSTS_IMAGES_SAVE_PATH}/${req.file.filename}`
-        } : { ...req.body };
+            text: jsonBody.text,
+            imageUrl: `${req.protocol}://${req.get('host')}/${POSTS_IMAGES_SAVE_PATH}/${req.file.filename}`,
+            imageAlt: jsonBody.imageAlt,
+            authorId: req.auth.userId
+        } : { text: req.body.text, authorId: req.auth.userId };
     if ( req.file && !postObject.imageAlt ) {
         deleteImage(postObject.imageUrl);
         handleError(res, 400, new Error("No imageAlt property found (during post modification with an image file)"));
@@ -446,6 +452,7 @@ export function deletePost(req, res, next) {
  *        schema:
  *          $ref: "#/components/schemas/errorMessage"
  */
+// OUT: Array of comments, with a descending order (more recent first)
 export function getPostComments(req, res, next) {
     const limit = parseInt(req.query.limit);
     const before = req.query.before;
@@ -492,12 +499,8 @@ export function getPostComments(req, res, next) {
  *          text:
  *            type: string
  *            description: Text content of the comment
- *          authorId:
- *            type: string
- *            description: ID of the author of the comment
  *      example:
  *        text: This is a comment
- *        authorId: e5268c386c9b17c39bd6a17d
  * responses:
  *  "200":
  *    description: OK
@@ -524,13 +527,23 @@ export function getPostComments(req, res, next) {
  *        schema:
  *          $ref: "#/components/schemas/errorMessage"
  */
-// IN : { text: String, authorId: String }
+// IN : { text: String }
 // OUT: Single comment (the one created)
 export function commentPost(req, res, next) {
     prisma.comment.create({
         data: {
-            ...req.body,
+            text: req.body.text,
+            authorId: req.auth.userId,
             postId: req.params.id
+        },
+        include: {
+            author: {
+                select: {
+                    firstName: true,
+                    surName: true,
+                    pseudo: true
+                }
+            }
         }
     })
     .then(comment => res.status(201).json(comment))
@@ -557,9 +570,6 @@ export function commentPost(req, res, next) {
  *      schema:
  *        type: "object"
  *        properties:
- *          userId:
- *            type: string
- *            description: ID of the user
  *          like:
  *            type: number
  *            description: new like status of the post for the user (-1 dislike / 0 neutral / 1 like)
@@ -567,7 +577,6 @@ export function commentPost(req, res, next) {
  *            maximum: 1
  *            enum: [-1, 0, 1]
  *      example:
- *        userId: e5268c386c9b17c39bd6a17d
  *        like: 1
  * responses:
  *  "201":
@@ -601,12 +610,13 @@ export function commentPost(req, res, next) {
  *        schema:
  *          $ref: "#/components/schemas/errorMessage"
  */
-// IN : { userId: String, like: Number }
+// IN : { like: Number }
 // OUT: Single post (the one liked)
 export function likePost(req, res, next) {
+    const postId = req.params.id;
     prisma.post.findUnique({ 
         where: {
-            id: req.params.id
+            id: postId
         },
         include: {
             likes: {
@@ -629,23 +639,23 @@ export function likePost(req, res, next) {
         let likeDisconnect = [];
         let dislikeConnect = [];
         let dislikeDisconnect = [];
-        let id = req.body.userId;
+        let userId = req.auth.userId;
         // Search the user in the likes/dislikes arrays and
         // remove the old like/dislike if found
-        if (post.likes.findIndex(user => user.id === id) != -1) {
-            likeDisconnect = { id };
+        if (post.likes.findIndex(user => user.id === userId) != -1) {
+            likeDisconnect = { id: userId };
         }
-        if (post.dislikes.findIndex(user => user.id === id) != -1) {
-            dislikeDisconnect = { id };
+        if (post.dislikes.findIndex(user => user.id === userId) != -1) {
+            dislikeDisconnect = { id: userId };
         }
         // Add the new like/dislike
         if (req.body.like === 1) {
-            likeConnect = { id };
+            likeConnect = { id: userId };
         } else if (req.body.like === -1) {
-            dislikeConnect = { id };
+            dislikeConnect = { id: userId };
         }
         prisma.post.update({
-            where: { id: req.params.id },
+            where: { id: postId },
             data: {
                 likes: {
                     connect : likeConnect,

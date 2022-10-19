@@ -236,15 +236,10 @@
           "text": {
             "type": "string",
             "description": "Content (text) of the post"
-          },
-          "authorId": {
-            "type": "string",
-            "description": "ID of the user that created the post"
           }
         },
         "example": {
-          "text":"This is a post text",
-          "authorId":"e5268c386c9b17c39bd6a17d"
+          "text":"This is a post text"
         }
       },
       "post-form-with-image": {
@@ -255,10 +250,6 @@
             "type": "string",
             "description": "Content (text) of the post"
           },
-          "authorId": {
-            "type": "string",
-            "description": "ID of the user that created the post"
-          },
           "imageAlt": {
             "type": "string",
             "description": "Description (alternative text) of the image (required if an image is provided)"
@@ -266,7 +257,6 @@
         },
         "example": {
           "text":"This is a post text",
-          "authorId":"e5268c386c9b17c39bd6a17d",
           "imageAlt":"This is the description of the image"
         }
       },
