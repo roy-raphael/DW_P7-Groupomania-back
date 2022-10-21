@@ -4,6 +4,9 @@ import {loginLimiter, loginConsecutiveLimiter, getFibonacciBlockDurationMinutes}
 import {handleError} from '../utils/error-utils.js'
 import * as jwtUtils from '../utils/jwt-utils.js'
 
+const EMAIL_REGEXP = /^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$/;
+const PASSWORD_AUTHORIZED_CHARACTERS = /[^\w\d `!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?~]/g;
+
 /*
  * @oas [post] /api/auth/signup
  * tags: ["auth"]
@@ -79,6 +82,15 @@ export function signup(req, res, next) {
     const userSurName = req.body.surName;
     if (userEmail == null) return handleError(res, 400, new Error('No surName provided'));
     const userPseudo = req.body.pseudo; // optional
+    
+    // Sanity check
+    if (!userEmail.match(EMAIL_REGEXP)) {
+        return handleError(res, 400, new Error('Wrong email provided (sanity check failed)'));
+    }
+    if (userPassword.match(PASSWORD_AUTHORIZED_CHARACTERS)) {
+        return handleError(res, 400, new Error('Wrong password provided (sanity check failed)'));
+    }
+
     // Core of the controller
     bcrypt.hash(userPassword, 10)
     .then(hash => {
