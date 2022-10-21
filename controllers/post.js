@@ -472,18 +472,12 @@ export function modifyPost(req, res, next) {
  * @oas [delete] /api/posts/{id}
  * tags: ["posts"]
  * summary: Deletion of a post
- * description: Delete the post with the given id
+ * description: Delete the post with the given id (and its comments)
  * parameters:
  *  - $ref: "#/components/parameters/postIdParam"
  * responses:
- *  "200":
- *    description: OK
- *    content:
- *      application/json:
- *        schema:
- *          type: string
- *          description: Post deletion message
- *        example: Post deleted
+ *  "204":
+ *    description: No Content
  *  "401":
  *    description: Unauthorized
  *    content:
@@ -514,9 +508,11 @@ export function deletePost(req, res, next) {
     if (req.post.imageUrl) {
         deleteImage(req.post.imageUrl);
     }
-    prisma.post.delete({ where: { id: req.params.id } })
-    .then(() => res.status(200).json({ message: 'Post deleted'}))
-    .catch(error => handleError(res, 401, error));
+    const deleteComments = prisma.comment.deleteMany({ where: { postId: req.params.id } });
+    const deletePost = prisma.post.delete({ where: { id: req.params.id } });
+    prisma.$transaction([deleteComments, deletePost])
+    .then(() => res.status(204).end())
+    .catch(error => handleError(res, 500, error));
 }
 
 /*
