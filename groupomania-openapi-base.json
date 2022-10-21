@@ -229,19 +229,6 @@
           ]
         }
       },
-      "post-form": {
-        "type": "object",
-        "description": "data to use to create the post without image (object structure -> post-form schema)",
-        "properties": {
-          "text": {
-            "type": "string",
-            "description": "Content (text) of the post"
-          }
-        },
-        "example": {
-          "text":"This is a post text"
-        }
-      },
       "post-form-with-image": {
         "type": "object",
         "description": "data to use to create the post with image (object structure -> post-form-with-image schema)",

@@ -103,7 +103,16 @@ export function getPosts(req, res, next) {
  *  content:
  *    application/json:
  *      schema:
- *        $ref: "#/components/schemas/post-form"
+ *        type: "object"
+ *        description: data to use to create a post without image
+ *        properties:
+ *          text:
+ *            type: string
+ *            description: Content (text) of the post
+ *        required:
+ *          - text
+ *        example:
+ *          text: This is a post text
  *    multipart/form-data:
  *      schema:
  *        type: object
@@ -165,7 +174,38 @@ export function createPost(req, res, next) {
         handleError(res, 400, new Error("No imageAlt property found (during post creation with an image file)"));
     } else {
         prisma.post.create({
-            data: postObject
+            data: postObject,
+            include: {
+                author: {
+                    select: {
+                        firstName: true,
+                        surName: true,
+                        pseudo: true
+                    }
+                },
+                likes: {
+                    select: {
+                        id: true
+                    }
+                },
+                dislikes: {
+                    select: {
+                        id: true
+                    }
+                },
+                comments: {
+                    orderBy: [
+                        {
+                            createdAt: 'desc'
+                        }
+                    ]
+                },
+                _count: {
+                    select: {
+                        comments: true
+                    }
+                }
+            }
         })
         .then(post => res.status(201).json(post))
         .catch(error => {
@@ -286,7 +326,19 @@ export function getOnePost(req, res, next) {
  *  content:
  *    application/json:
  *      schema:
- *        $ref: "#/components/schemas/post-form"
+ *        type: "object"
+ *        description: data to use to modify the post without image
+ *        properties:
+ *          text:
+ *            type: string
+ *            description: Content (text) of the post
+ *          removeImage:
+ *            type: boolean
+ *            description: If the image should be removed from the post
+ *        required:
+ *          - text
+ *        example:
+ *          text: This is a post text
  *    multipart/form-data:
  *      schema:
  *        type: "object"
@@ -347,12 +399,19 @@ export function modifyPost(req, res, next) {
     if (req.fileValidationError) {
         return handleError(res, 415, new Error(req.fileValidationError));
     }
+    const removeImage = req.body.removeImage;
     const jsonBody = req.file ? JSON.parse(req.body.post) : req.body;
     const postObject = req.file ?
         {
             text: jsonBody.text,
             imageUrl: `${req.protocol}://${req.get('host')}/${POSTS_IMAGES_SAVE_PATH}/${req.file.filename}`,
             imageAlt: jsonBody.imageAlt,
+            authorId: req.auth.userId
+        } : removeImage ?
+        {
+            text: req.body.text,
+            imageUrl: null,
+            imageAlt: null,
             authorId: req.auth.userId
         } : { text: req.body.text, authorId: req.auth.userId };
     if ( req.file && !postObject.imageAlt ) {
@@ -361,10 +420,41 @@ export function modifyPost(req, res, next) {
     } else {
         prisma.post.update({
             where: { id: req.params.id },
-            data: postObject
+            data: postObject,
+            include: {
+                author: {
+                    select: {
+                        firstName: true,
+                        surName: true,
+                        pseudo: true
+                    }
+                },
+                likes: {
+                    select: {
+                        id: true
+                    }
+                },
+                dislikes: {
+                    select: {
+                        id: true
+                    }
+                },
+                comments: {
+                    orderBy: [
+                        {
+                            createdAt: 'desc'
+                        }
+                    ]
+                },
+                _count: {
+                    select: {
+                        comments: true
+                    }
+                }
+            }
         })
         .then(post => {
-            if (req.file && req.post.imageUrl) {
+            if ((req.file && req.post.imageUrl) || removeImage) {
                 deleteImage(req.post.imageUrl);
             }
             res.status(200).json(post);
