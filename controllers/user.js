@@ -93,7 +93,7 @@ export function signup(req, res, next) {
             data: user
         })
         .then(() => res.status(201).json({ message: 'User created' }))
-        .catch(error => handleError(res, 400, error));
+        .catch(error => handleError(res, 500, error));
     })
     .catch(error => handleError(res, 500, error));
 }
