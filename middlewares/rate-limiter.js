@@ -13,7 +13,7 @@ export async function loginRateLimiter(req, res, next) {
     
     if (retrySecs > 0) {
         res.set('Retry-After', String(retrySecs));
-        res.status(429).end('Too Many Requests');
+        res.status(429).json({  error: {name: 'Error', message: 'Too Many Requests'}, retryAfter: retrySecs });
     } else {
         next();
     }

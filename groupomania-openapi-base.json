@@ -59,6 +59,42 @@
         "description": "A text message describing an error",
         "example": "Error during the request processing"
       },
+      "errorObject": {
+        "type": "object",
+        "description": "An error defined by a name and a message",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "The name of the error",
+            "example": "Error"
+          },
+          "message": {
+            "type": "string",
+            "maxLength": 256,
+            "description": "A text message describing the error",
+            "example": "Error during the request processing"
+          }
+        },
+        "example": {
+          "name": "Error",
+          "message": "Error during the request processing"
+        }
+      },
+      "error": {
+        "type": "object",
+        "description": "An error defined by a name and a message",
+        "properties": {
+          "error": {
+            "$ref": "#/components/schemas/errorObject"
+          }
+        },
+        "example": {
+          "error": {
+            "name": "Error",
+            "message": "Error during the request processing"
+          }
+        }
+      },
       "user-credentials": {
         "type": "object",
         "description": "data relative to credentials sent back to a user after login or refresh (object structure -> user-credentials schema)",

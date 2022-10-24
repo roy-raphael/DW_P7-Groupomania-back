@@ -22,19 +22,19 @@ import {handleError} from '../utils/error-utils.js'
  *    content:
  *      application/json:
  *        schema:
- *          $ref: "#/components/schemas/errorMessage"
+ *          $ref: "#/components/schemas/error"
  *  "401":
  *    description: Unauthorized
  *    content:
  *      application/json:
  *        schema:
- *          $ref: "#/components/schemas/errorMessage"
+ *          $ref: "#/components/schemas/error"
  *  "500":
  *    description: Internal Server Error
  *    content:
  *      application/json:
  *        schema:
- *          $ref: "#/components/schemas/errorMessage"
+ *          $ref: "#/components/schemas/error"
  */
 // OUT: Array of posts, with a descending order (more recent first)
 export function getPosts(req, res, next) {
@@ -135,25 +135,25 @@ export function getPosts(req, res, next) {
  *    content:
  *      application/json:
  *        schema:
- *          $ref: "#/components/schemas/errorMessage"
+ *          $ref: "#/components/schemas/error"
  *  "401":
  *    description: Unauthorized
  *    content:
  *      application/json:
  *        schema:
- *          $ref: "#/components/schemas/errorMessage"
+ *          $ref: "#/components/schemas/error"
  *  "415":
  *    description: Unsupported Media Type
  *    content:
  *      application/json:
  *        schema:
- *          $ref: "#/components/schemas/errorMessage"
+ *          $ref: "#/components/schemas/error"
  *  "500":
  *    description: Internal Server Error
  *    content:
  *      application/json:
  *        schema:
- *          $ref: "#/components/schemas/errorMessage"
+ *          $ref: "#/components/schemas/error"
  */
 // IN : EITHER { text: string } as json OR { post: String, image: File } WHERE post = {text: string, imageAlt: string}
 // OUT: Single post (the one created)
@@ -236,19 +236,19 @@ export function createPost(req, res, next) {
  *    content:
  *      application/json:
  *        schema:
- *          $ref: "#/components/schemas/errorMessage"
+ *          $ref: "#/components/schemas/error"
  *  "404":
  *    description: Not Found
  *    content:
  *      application/json:
  *        schema:
- *          $ref: "#/components/schemas/errorMessage"
+ *          $ref: "#/components/schemas/error"
  *  "500":
  *    description: Internal Server Error
  *    content:
  *      application/json:
  *        schema:
- *          $ref: "#/components/schemas/errorMessage"
+ *          $ref: "#/components/schemas/error"
  */
 // OUT: Single post
 export function getOnePost(req, res, next) {
@@ -361,37 +361,37 @@ export function getOnePost(req, res, next) {
  *    content:
  *      application/json:
  *        schema:
- *          $ref: "#/components/schemas/errorMessage"
+ *          $ref: "#/components/schemas/error"
  *  "401":
  *    description: Unauthorized
  *    content:
  *      application/json:
  *        schema:
- *          $ref: "#/components/schemas/errorMessage"
+ *          $ref: "#/components/schemas/error"
  *  "403":
  *    description: Forbidden
  *    content:
  *      application/json:
  *        schema:
- *          $ref: "#/components/schemas/errorMessage"
+ *          $ref: "#/components/schemas/error"
  *  "404":
  *    description: Not Found
  *    content:
  *      application/json:
  *        schema:
- *          $ref: "#/components/schemas/errorMessage"
+ *          $ref: "#/components/schemas/error"
  *  "415":
  *    description: Unsupported Media Type
  *    content:
  *      application/json:
  *        schema:
- *          $ref: "#/components/schemas/errorMessage"
+ *          $ref: "#/components/schemas/error"
  *  "500":
  *    description: Internal Server Error
  *    content:
  *      application/json:
  *        schema:
- *          $ref: "#/components/schemas/errorMessage"
+ *          $ref: "#/components/schemas/error"
  */
 // IN : EITHER { text: string } as json OR { post: String, image: File } WHERE post = {text: string, imageAlt: string}
 // OUT: Single post (the one modified)
@@ -483,25 +483,25 @@ export function modifyPost(req, res, next) {
  *    content:
  *      application/json:
  *        schema:
- *          $ref: "#/components/schemas/errorMessage"
+ *          $ref: "#/components/schemas/error"
  *  "403":
  *    description: Forbidden
  *    content:
  *      application/json:
  *        schema:
- *          $ref: "#/components/schemas/errorMessage"
+ *          $ref: "#/components/schemas/error"
  *  "404":
  *    description: Not Found
  *    content:
  *      application/json:
  *        schema:
- *          $ref: "#/components/schemas/errorMessage"
+ *          $ref: "#/components/schemas/error"
  *  "500":
  *    description: Internal Server Error
  *    content:
  *      application/json:
  *        schema:
- *          $ref: "#/components/schemas/errorMessage"
+ *          $ref: "#/components/schemas/error"
  */
 // OUT: { message: String }
 export function deletePost(req, res, next) {
@@ -536,7 +536,7 @@ export function deletePost(req, res, next) {
  *    content:
  *      application/json:
  *        schema:
- *          $ref: "#/components/schemas/errorMessage"
+ *          $ref: "#/components/schemas/error"
  */
 // OUT: Array of comments, with a descending order (more recent first)
 export function getPostComments(req, res, next) {
@@ -599,19 +599,19 @@ export function getPostComments(req, res, next) {
  *    content:
  *      application/json:
  *        schema:
- *          $ref: "#/components/schemas/errorMessage"
+ *          $ref: "#/components/schemas/error"
  *  "401":
  *    description: Unauthorized
  *    content:
  *      application/json:
  *        schema:
- *          $ref: "#/components/schemas/errorMessage"
+ *          $ref: "#/components/schemas/error"
  *  "500":
  *    description: Internal Server Error
  *    content:
  *      application/json:
  *        schema:
- *          $ref: "#/components/schemas/errorMessage"
+ *          $ref: "#/components/schemas/error"
  */
 // IN : { text: String }
 // OUT: Single comment (the one created)
@@ -676,25 +676,25 @@ export function commentPost(req, res, next) {
  *    content:
  *      application/json:
  *        schema:
- *          $ref: "#/components/schemas/errorMessage"
+ *          $ref: "#/components/schemas/error"
  *  "401":
  *    description: Unauthorized
  *    content:
  *      application/json:
  *        schema:
- *          $ref: "#/components/schemas/errorMessage"
+ *          $ref: "#/components/schemas/error"
  *  "404":
  *    description: Not Found
  *    content:
  *      application/json:
  *        schema:
- *          $ref: "#/components/schemas/errorMessage"
+ *          $ref: "#/components/schemas/error"
  *  "500":
  *    description: Internal Server Error
  *    content:
  *      application/json:
  *        schema:
- *          $ref: "#/components/schemas/errorMessage"
+ *          $ref: "#/components/schemas/error"
  */
 // IN : { like: Number }
 // OUT: Single post (the one liked)

@@ -18,7 +18,7 @@ export function handleError(res, wantedStatusCode, error) {
         || error instanceof Prisma.PrismaClientInitializationError
         || error instanceof Prisma.PrismaClientValidationError) {
             console.error(error);
-        return res.status(500).json({ error: 'Internal Server Error' });
+        return res.status(500).json({ error: {name: 'Error', message: 'Internal Server Error'} });
     }
     return res.status(wantedStatusCode).end(formatErrorForResponse(error));
 }

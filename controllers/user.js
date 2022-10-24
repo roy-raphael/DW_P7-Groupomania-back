@@ -60,13 +60,13 @@ const PASSWORD_AUTHORIZED_CHARACTERS = /[^\w\d `!@#$%^&*()_+\-=\[\]{};':"\\|,.<>
  *    content:
  *      application/json:
  *        schema:
- *          $ref: "#/components/schemas/errorMessage"
+ *          $ref: "#/components/schemas/error"
  *  "500":
  *    description: Internal Server Error
  *    content:
  *      application/json:
  *        schema:
- *          $ref: "#/components/schemas/errorMessage"
+ *          $ref: "#/components/schemas/error"
  */
 // IN : { email: string, password: string, firstName: string, surName: string }
 //   OR { email: string, password: string, firstName: string, surName: string, pseudo: string }
@@ -155,25 +155,38 @@ export function signup(req, res, next) {
  *    content:
  *      application/json:
  *        schema:
- *          $ref: "#/components/schemas/errorMessage"
+ *          $ref: "#/components/schemas/error"
  *  "401":
  *    description: Unauthorized
  *    content:
  *      application/json:
  *        schema:
- *          $ref: "#/components/schemas/errorMessage"
+ *          $ref: "#/components/schemas/error"
  *  "429":
  *    description: Too Many Request
  *    content:
  *      application/json:
  *        schema:
- *          $ref: "#/components/schemas/errorMessage"
+ *          type: object
+ *          description: Error object containing a message and a number of seconds to wait before a retry
+ *          properties:
+ *            error:
+ *              $ref: "#/components/schemas/errorObject"
+ *            reftyAfter:
+ *              type: number
+ *              description: number of seconds to wait before retrying the login
+ *          example:
+ *            error:
+ *              name: Error
+ *              message: Too Many Requests
+ *            reftyAfter: 60
+ *            
  *  "500":
  *    description: Internal Server Error
  *    content:
  *      application/json:
  *        schema:
- *          $ref: "#/components/schemas/errorMessage"
+ *          $ref: "#/components/schemas/error"
  */
 // IN : { email: string, password: string } OR { email: string, password: string, refreshToken: string }
 // OUT: { userId: string, accessToken: string, refreshToken: string }
@@ -297,19 +310,19 @@ export function login(req, res, next) {
  *    content:
  *      application/json:
  *        schema:
- *          $ref: "#/components/schemas/errorMessage"
+ *          $ref: "#/components/schemas/error"
  *  "401":
  *    description: Unauthorized
  *    content:
  *      application/json:
  *        schema:
- *          $ref: "#/components/schemas/errorMessage"
+ *          $ref: "#/components/schemas/error"
  *  "500":
  *    description: Internal Server Error
  *    content:
  *      application/json:
  *        schema:
- *          $ref: "#/components/schemas/errorMessage"
+ *          $ref: "#/components/schemas/error"
  */
 // IN : { refreshToken: string }
 // OUT: { userId: string, accessToken: string, refreshToken: string }
@@ -422,13 +435,13 @@ export async function refresh(req, res, next) {
  *    content:
  *      application/json:
  *        schema:
- *          $ref: "#/components/schemas/errorMessage"
+ *          $ref: "#/components/schemas/error"
  *  "500":
  *    description: Internal Server Error
  *    content:
  *      application/json:
  *        schema:
- *          $ref: "#/components/schemas/errorMessage"
+ *          $ref: "#/components/schemas/error"
  */
 // IN : { refreshToken: string }
 export async function logout(req, res, next) {
