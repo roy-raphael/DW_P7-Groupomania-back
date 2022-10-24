@@ -161,7 +161,20 @@ export function signup(req, res, next) {
  *    content:
  *      application/json:
  *        schema:
- *          $ref: "#/components/schemas/error"
+ *          type: object
+ *          description: Error object containing a message and optionally a number of seconds to wait before a retry
+ *          properties:
+ *            error:
+ *              $ref: "#/components/schemas/errorObject"
+ *            reftyAfter:
+ *              type: number
+ *              description: number of seconds to wait before retrying the login
+ *          required:
+ *            - error
+ *          example:
+ *            error:
+ *              name: Error
+ *              message: Incorrect password
  *  "429":
  *    description: Too Many Request
  *    content:
@@ -180,7 +193,6 @@ export function signup(req, res, next) {
  *              name: Error
  *              message: Too Many Requests
  *            reftyAfter: 60
- *            
  *  "500":
  *    description: Internal Server Error
  *    content:
@@ -250,7 +262,7 @@ export function login(req, res, next) {
                 .catch(error => handleError(res, 500, error));                
             } else {
                 // Update the login rate limiters (only if the bcrypt.compare function doesn't fail)
-                let blockDurationSeconds = 1; // initial value (for default blocking)
+                let blockDurationSeconds = 0;
                 try {
                     const userConsecutiveLimiterRes = await loginConsecutiveLimiter.get(userEmail);
                     const globalConsumedPoints = userConsecutiveLimiterRes == null ? 1 : 5;
@@ -267,8 +279,12 @@ export function login(req, res, next) {
                         blockDurationSeconds = Math.round(rlRejected.msBeforeNext / 1000);
                     }
                 }
-                res.set('Retry-After', String(blockDurationSeconds) || 1);
-                return handleError(res, 401, new Error('Incorrect password'));
+                if (blockDurationSeconds > 0) {
+                    res.set('Retry-After', String(blockDurationSeconds) || 1);
+                    return res.status(401).json({  error: {name: 'Error', message: 'Incorrect password'}, retryAfter: blockDurationSeconds });
+                } else {
+                    return handleError(res, 401, new Error('Incorrect password'));
+                }
             }
         })
         .catch(error => handleError(res, 500, error));
