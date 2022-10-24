@@ -1,4 +1,4 @@
-// import * as http from 'http';
+import * as http from 'http';
 import * as https from 'https';
 import fs from 'fs';
 import app from './app.js';
@@ -38,20 +38,26 @@ const errorHandler = error => {
     }
 };
 
-var key;
-var cert;
-try {
-    // use 'utf8' to get string instead of byte array
-    key = fs.readFileSync(process.env.SEC_CERTIFICATE_PRIVATE_KEY, 'utf8');
-    cert = fs.readFileSync(process.env.SEC_CERTIFICATE_FILE, 'utf8');
-} catch(error) {
-    console.error(error);
-    process.kill(process.pid, 'SIGTERM');
+var server;
+if (process.argv.slice(2).includes("http")) {
+    console.log("Launching server with HTTP mode (unsecure)");
+    server = http.createServer(app);
+} else {
+    console.log("Launching server with HTTPS mode (secure)");
+    var key;
+    var cert;
+    try {
+        // use 'utf8' to get string instead of byte array
+        key = fs.readFileSync(process.env.SEC_CERTIFICATE_PRIVATE_KEY, 'utf8');
+        cert = fs.readFileSync(process.env.SEC_CERTIFICATE_FILE, 'utf8');
+    } catch(error) {
+        console.error(error);
+        process.kill(process.pid, 'SIGTERM');
+    }
+    const options = { key, cert };
+    
+    server = https.createServer(options, app);
 }
-const options = { key, cert };
-
-// const server = http.createServer(app);
-const server = https.createServer(options, app);
 
 server.on('error', errorHandler);
 server.on('listening', () => {

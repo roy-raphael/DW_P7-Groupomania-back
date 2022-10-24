@@ -5,7 +5,9 @@
   "main": "server.js",
   "type": "module",
   "scripts": {
+    "start:unsecure": "node server.js http",
     "start:migrate": "prisma migrate deploy && npm run start",
+    "start:migrate:unsecure": "prisma migrate deploy && npm run start:unsecure",
     "docker:build": "docker build -t groupomania_back .",
     "docker:run": "docker run -it groupomania_back",
     "docker:clean": "docker system prune && npm run docker:clean:volume",
