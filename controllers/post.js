@@ -2,6 +2,9 @@ import fs from 'fs';
 import prisma from "../client.js"
 import {POSTS_IMAGES_SAVE_PATH} from '../utils/constants.js'
 import {handleError} from '../utils/error-utils.js'
+import IS_HTTPS_MODE from '../utils/check-if-https.js'
+
+const PROTOCOL = IS_HTTPS_MODE ? "https://" : "http://";
 
 /*
  * @oas [get] /api/posts
@@ -83,7 +86,7 @@ export function getPosts(req, res, next) {
         ],
         take: (limit != null && !isNaN(limit)) ? limit : undefined
     })
-    .then(posts => res.status(200).json(posts))
+    .then(posts => res.status(200).json(posts.map(post => completeImageUrl(post))))
     .catch(error => handleError(res, 400, error));
 }
 
@@ -165,7 +168,9 @@ export function createPost(req, res, next) {
     const postObject = req.file ?
         {
             text: jsonBody.text,
-            imageUrl: `${req.protocol}://${req.get('host')}/${POSTS_IMAGES_SAVE_PATH}/${req.file.filename}`,
+            // Do not save the URL with the protocol (${req.protocol}://), because we want to handle HTTP and HTTPS protocols
+            // (the protocol will be added to the URL before sending the post back to the frontend)
+            imageUrl: `${req.get('host')}/${POSTS_IMAGES_SAVE_PATH}/${req.file.filename}`,
             imageAlt: jsonBody.imageAlt,
             authorId: req.auth.userId
         } : { text: req.body.text, authorId: req.auth.userId };
@@ -207,7 +212,7 @@ export function createPost(req, res, next) {
                 }
             }
         })
-        .then(post => res.status(201).json(post))
+        .then(post => res.status(201).json(completeImageUrl(post)))
         .catch(error => {
             if (req.file) {
                 deleteImage(postObject.imageUrl);
@@ -303,7 +308,7 @@ export function getOnePost(req, res, next) {
         if (!post) {
             return handleError(res, 404, new Error('Post not found'));
         }
-        res.status(200).json(post)
+        res.status(200).json(completeImageUrl(post))
     })
     .catch(error => handleError(res, 500, error));
 }
@@ -404,7 +409,9 @@ export function modifyPost(req, res, next) {
     const postObject = req.file ?
         {
             text: jsonBody.text,
-            imageUrl: `${req.protocol}://${req.get('host')}/${POSTS_IMAGES_SAVE_PATH}/${req.file.filename}`,
+            // Do not save the URL with the protocol (${req.protocol}://), because we want to handle HTTP and HTTPS protocols
+            // (the protocol will be added to the URL before sending the post back to the frontend)
+            imageUrl: `${req.get('host')}/${POSTS_IMAGES_SAVE_PATH}/${req.file.filename}`,
             imageAlt: jsonBody.imageAlt,
             authorId: req.auth.userId
         } : removeImage ?
@@ -457,7 +464,7 @@ export function modifyPost(req, res, next) {
             if ((req.file && req.post.imageUrl) || removeImage) {
                 deleteImage(req.post.imageUrl);
             }
-            res.status(200).json(post);
+            res.status(200).json(completeImageUrl(post));
         })
         .catch(error => {
             if (req.file) {
@@ -773,7 +780,7 @@ export function likePost(req, res, next) {
                 comments: true
             }
         })
-        .then(post => res.status(200).json(post))
+        .then(post => res.status(200).json(completeImageUrl(post)))
         .catch(error => handleError(res, 400, error));
     })
     .catch(error => handleError(res, 404, error));
@@ -790,4 +797,8 @@ function deleteImage(imageUrl) {
             console.error(error);
         }
     }
+}
+
+function completeImageUrl(post) {
+    return {...post, imageUrl: post.imageUrl ? PROTOCOL + post.imageUrl : null};
 }
