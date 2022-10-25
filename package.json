@@ -13,10 +13,11 @@
     "docker:clean": "docker system prune && npm run docker:clean:volume",
     "docker:clean:images": "docker rmi $(docker images -qa -f 'dangling=true')",
     "docker:clean:volume": "docker volume prune --filter label!=com.docker.compose.volume=db_data -f",
-    "prisma:migrate": "npx prisma migrate dev --name ",
-    "prisma:editor": "npx prisma studio",
-    "prisma:format": "npx prisma format",
-    "doc": "npx oas generate groupomania-openapi-base.json -v > groupomania-openapi-doc.json"
+    "prisma:deploy": "prisma migrate deploy",
+    "prisma:migrate": "prisma migrate dev --name ",
+    "prisma:editor": "prisma studio",
+    "prisma:format": "prisma format",
+    "doc": "oas generate groupomania-openapi-base.json -v > groupomania-openapi-doc.json"
   },
   "repository": {
     "type": "git",
