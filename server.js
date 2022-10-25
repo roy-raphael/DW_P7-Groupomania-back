@@ -3,6 +3,7 @@ import * as https from 'https';
 import fs from 'fs';
 import app from './app.js';
 import process from './utils/load-env.js';
+import IS_HTTPS_MODE from './utils/check-if-https.js'
 
 const normalizePort = val => {
     const port = parseInt(val, 10);
@@ -39,10 +40,7 @@ const errorHandler = error => {
 };
 
 var server;
-if (process.argv.slice(2).includes("http")) {
-    console.log("Launching server with HTTP mode (unsecure)");
-    server = http.createServer(app);
-} else {
+if (IS_HTTPS_MODE) {
     console.log("Launching server with HTTPS mode (secure)");
     var key;
     var cert;
@@ -57,6 +55,9 @@ if (process.argv.slice(2).includes("http")) {
     const options = { key, cert };
     
     server = https.createServer(options, app);
+} else {
+    console.log("Launching server with HTTP mode (unsecure)");
+    server = http.createServer(app);
 }
 
 server.on('error', errorHandler);
