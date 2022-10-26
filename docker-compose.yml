@@ -17,6 +17,7 @@ services:
       - db
     volumes:
       - ../../sec_files:/app/sec_files
+      - ./images:/app/images
     image: groupomania_back:latest
     ports:
       - "3000:3000"
