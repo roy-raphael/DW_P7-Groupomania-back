@@ -128,24 +128,22 @@ Run `docker-compose up` (in the backend folder)
 
 ## Restore the database from a SQL dump file (and an images folder)
 
+### Restore the images of the posts
+
+Copy all of the images inside an 'images' folder (to create if absent) in the backend repo folder (aside this README.md file)
+
 ### [local run only] Restore database
-* Copy images folder into the backend repo folder (aside this README.md file)
-* Run `mysql -u <username> -p -e "CREATE DATABASE IF NOT EXISTS <database_name>; use <database_name>; source <groupomania_database_dump.sql>;"`, where :
-    * <groupomania_database_dump.sql> is the path to the SQL dump file to restore
-    * <database_name> is the name of the database to connect to
-    * <username> is the user you use for your MySQL instance
+Run `mysql -u <username> -p -e "CREATE DATABASE IF NOT EXISTS <database_name>; use <database_name>; source <groupomania_database_dump.sql>;"`, where :
+ * <groupomania_database_dump.sql> is the path to the SQL dump file to restore
+ * <database_name> is the name of the database to connect to
+ * <username> is the user you use for your MySQL instance
+
 then, enter the password you use for this user
 
 ### [docker run only] Restore database
-* Run `docker ps` to identify the containers ID <api_container_id> and <db_container_id>, where :
-    * <api_container_id> is the ID of the backend API container
-    * <db_container_id> is the ID of the backend MySQL database container
-* Run `docker cp <folder_containing_images>/. <api_container_id>:/app/images`
-where <folder_containing_images> is the folder containing the images for the SQL database dump to restore
-* Run `docker cp <groupomania_database_dump.sql> <db_container_id>:/dump.sql`
-where <groupomania_database_dump.sql> is the path to the SQL dump file to restore,
-* Run `docker exec -ti <db_container_id> mysql -u groupomania -p'j!ET@*XC63bncf' -e "CREATE DATABASE IF NOT EXISTS groupomania_main; use groupomania_main; source dump.sql;"`
-
+ * Run `docker ps` to identify the the ID of the backend MySQL database container : <db_container_id>
+ * Run `docker cp <groupomania_database_dump.sql> <db_container_id>:/dump.sql`, where <groupomania_database_dump.sql> is the path to the SQL dump file to restore
+ * Run `docker exec -ti <db_container_id> mysql -u groupomania -p'j!ET@*XC63bncf' -e "CREATE DATABASE IF NOT EXISTS groupomania_main; use groupomania_main; source dump.sql;"`
 
 ## Generate OpenAPI documentation
 Run `npm run doc` (in the backend folder)
