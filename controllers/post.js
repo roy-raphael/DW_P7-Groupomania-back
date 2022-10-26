@@ -10,7 +10,27 @@ const PROTOCOL = IS_HTTPS_MODE ? "https://" : "http://";
  * @oas [get] /api/posts
  * tags: ["posts"]
  * summary: Find all posts
- * description: Returns an array of all the posts in the database
+ * description: >
+ *  Returns an array of some of the posts in the database, with a descending order (more recent first).
+ *  Each post also includes the author, likes, dislikes and some comments (with a descending order).
+ * parameters:
+ *  - in: query
+ *    name: limit
+ *    description: The maximum number of posts to retrieve.
+ *    schema:
+ *      type: integer
+ *  - in: query
+ *    name: before
+ *    description: The date before which the posts must be retrieved.
+ *    schema:
+ *      type: string
+ *      format: date-time
+ *      example: 2022-10-12T09:43:15.103Z
+ *  - in: query
+ *    name: comments-limit
+ *    description: The maximum number of comments to retrieve for each post.
+ *    schema:
+ *      type: integer
  * responses:
  *  "200":
  *    description: OK
@@ -39,7 +59,7 @@ const PROTOCOL = IS_HTTPS_MODE ? "https://" : "http://";
  *        schema:
  *          $ref: "#/components/schemas/error"
  */
-// OUT: Array of posts, with a descending order (more recent first)
+// OUT: Array of posts, with a descending order (more recent first), including author, likes, dislikes and some comments (with a descending order)
 export function getPosts(req, res, next) {
     const limit = parseInt(req.query.limit);
     const before = req.query.before;
@@ -226,9 +246,16 @@ export function createPost(req, res, next) {
  * @oas [get] /api/posts/{id}
  * tags: ["posts"]
  * summary: Finds a post by ID
- * description: Returns the post with the given id
+ * description: >
+ *  Returns the post with the given id (in path parameter).
+ *  The post also includes the author, likes, dislikes and some comments (with a descending order).
  * parameters:
  *  - $ref: "#/components/parameters/postIdParam"
+ *  - in: query
+ *    name: comments-limit
+ *    description: The maximum number of comments to retrieve for the post.
+ *    schema:
+ *      type: integer
  * responses:
  *  "200":
  *    description: OK
@@ -319,9 +346,10 @@ export function getOnePost(req, res, next) {
  * summary: Modification of a post
  * description: >
  *  Update the post with the id submitted.
- *  If an image is uploaded, it is captured, and the imageUrl of the post is updated.
- *  If no file is submitted, the informations of the post are in the root of the request body.
- *  If a file is submitted, the post (string) is in req.body.post
+ *  If no file is submitted, the updated text of the post is in the root of the request body.
+ *  If no file is submitted, the root of the request body also contains a removeImage boolean property. 
+ *  If a file is submitted, the updated post (string) is in req.body.post.
+ *  If a file is uploaded, it is captured, and the imageUrl of the post is updated.
  *  The initial request body is empty ; multer returns a string for the request body
  *  with the data submitted with the file.
  * parameters:
@@ -525,9 +553,23 @@ export function deletePost(req, res, next) {
  * @oas [get] /api/posts/{id}/comments
  * tags: ["posts"]
  * summary: Find comments for a post
- * description: Returns an array of the comments of the post
+ * description: >
+ *  Returns an array of some of the comments of the post specified in the path parameter, with a descending order (more recent first).
+ *  Each comment also includes the author.
  * parameters:
  *  - $ref: "#/components/parameters/postIdParam"
+ *  - in: query
+ *    name: limit
+ *    description: The maximum number of comments to retrieve.
+ *    schema:
+ *      type: integer
+ *  - in: query
+ *    name: before
+ *    description: The date before which the comments must be retrieved.
+ *    schema:
+ *      type: string
+ *      format: date-time
+ *      example: 2022-10-12T09:43:15.103Z
  * responses:
  *  "200":
  *    description: OK
