@@ -89,7 +89,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errorMessage"
+                  "$ref": "#/components/schemas/error"
                 }
               }
             }
@@ -99,7 +99,26 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errorMessage"
+                  "type": "object",
+                  "description": "Error object containing a message and optionally a number of seconds to wait before a retry",
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/errorObject"
+                    },
+                    "reftyAfter": {
+                      "type": "number",
+                      "description": "number of seconds to wait before retrying the login"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "example": {
+                    "error": {
+                      "name": "Error",
+                      "message": "Incorrect password"
+                    }
+                  }
                 }
               }
             }
@@ -109,7 +128,24 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errorMessage"
+                  "type": "object",
+                  "description": "Error object containing a message and a number of seconds to wait before a retry",
+                  "properties": {
+                    "error": {
+                      "$ref": "#/components/schemas/errorObject"
+                    },
+                    "reftyAfter": {
+                      "type": "number",
+                      "description": "number of seconds to wait before retrying the login"
+                    }
+                  },
+                  "example": {
+                    "error": {
+                      "name": "Error",
+                      "message": "Too Many Requests"
+                    },
+                    "reftyAfter": 60
+                  }
                 }
               }
             }
@@ -119,7 +155,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errorMessage"
+                  "$ref": "#/components/schemas/error"
                 }
               }
             }
@@ -163,7 +199,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errorMessage"
+                  "$ref": "#/components/schemas/error"
                 }
               }
             }
@@ -173,7 +209,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errorMessage"
+                  "$ref": "#/components/schemas/error"
                 }
               }
             }
@@ -224,7 +260,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errorMessage"
+                  "$ref": "#/components/schemas/error"
                 }
               }
             }
@@ -234,7 +270,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errorMessage"
+                  "$ref": "#/components/schemas/error"
                 }
               }
             }
@@ -244,7 +280,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errorMessage"
+                  "$ref": "#/components/schemas/error"
                 }
               }
             }
@@ -323,7 +359,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errorMessage"
+                  "$ref": "#/components/schemas/error"
                 }
               }
             }
@@ -333,7 +369,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errorMessage"
+                  "$ref": "#/components/schemas/error"
                 }
               }
             }
@@ -347,7 +383,35 @@
           "posts"
         ],
         "summary": "Find all posts",
-        "description": "Returns an array of all the posts in the database",
+        "description": "Returns an array of some of the posts in the database, with a descending order (more recent first). Each post also includes the author, likes, dislikes and some comments (with a descending order).\n",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "description": "The maximum number of posts to retrieve.",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "before",
+            "description": "The date before which the posts must be retrieved.",
+            "schema": {
+              "type": "string",
+              "format": "date-time",
+              "example": "2022-10-12T09:43:15.103Z"
+            }
+          },
+          {
+            "in": "query",
+            "name": "comments-limit",
+            "description": "The maximum number of comments to retrieve for each post.",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "OK",
@@ -367,7 +431,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errorMessage"
+                  "$ref": "#/components/schemas/error"
                 }
               }
             }
@@ -377,7 +441,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errorMessage"
+                  "$ref": "#/components/schemas/error"
                 }
               }
             }
@@ -387,7 +451,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errorMessage"
+                  "$ref": "#/components/schemas/error"
                 }
               }
             }
@@ -405,7 +469,20 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/post-form"
+                "type": "object",
+                "description": "data to use to create a post without image",
+                "properties": {
+                  "text": {
+                    "type": "string",
+                    "description": "Content (text) of the post"
+                  }
+                },
+                "required": [
+                  "text"
+                ],
+                "example": {
+                  "text": "This is a post text"
+                }
               }
             },
             "multipart/form-data": {
@@ -441,7 +518,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errorMessage"
+                  "$ref": "#/components/schemas/error"
                 }
               }
             }
@@ -451,7 +528,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errorMessage"
+                  "$ref": "#/components/schemas/error"
                 }
               }
             }
@@ -461,7 +538,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errorMessage"
+                  "$ref": "#/components/schemas/error"
                 }
               }
             }
@@ -471,7 +548,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errorMessage"
+                  "$ref": "#/components/schemas/error"
                 }
               }
             }
@@ -485,10 +562,18 @@
           "posts"
         ],
         "summary": "Finds a post by ID",
-        "description": "Returns the post with the given id",
+        "description": "Returns the post with the given id (in path parameter). The post also includes the author, likes, dislikes and some comments (with a descending order).\n",
         "parameters": [
           {
             "$ref": "#/components/parameters/postIdParam"
+          },
+          {
+            "in": "query",
+            "name": "comments-limit",
+            "description": "The maximum number of comments to retrieve for the post.",
+            "schema": {
+              "type": "integer"
+            }
           }
         ],
         "responses": {
@@ -507,7 +592,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errorMessage"
+                  "$ref": "#/components/schemas/error"
                 }
               }
             }
@@ -517,7 +602,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errorMessage"
+                  "$ref": "#/components/schemas/error"
                 }
               }
             }
@@ -527,7 +612,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errorMessage"
+                  "$ref": "#/components/schemas/error"
                 }
               }
             }
@@ -539,7 +624,7 @@
           "posts"
         ],
         "summary": "Modification of a post",
-        "description": "Update the post with the id submitted. If an image is uploaded, it is captured, and the imageUrl of the post is updated. If no file is submitted, the informations of the post are in the root of the request body. If a file is submitted, the post (string) is in req.body.post The initial request body is empty ; multer returns a string for the request body with the data submitted with the file.\n",
+        "description": "Update the post with the id submitted. If no file is submitted, the updated text of the post is in the root of the request body. If no file is submitted, the root of the request body also contains a removeImage boolean property.  If a file is submitted, the updated post (string) is in req.body.post. If a file is uploaded, it is captured, and the imageUrl of the post is updated. The initial request body is empty ; multer returns a string for the request body with the data submitted with the file.\n",
         "parameters": [
           {
             "$ref": "#/components/parameters/postIdParam"
@@ -550,7 +635,24 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/post-form"
+                "type": "object",
+                "description": "data to use to modify the post without image",
+                "properties": {
+                  "text": {
+                    "type": "string",
+                    "description": "Content (text) of the post"
+                  },
+                  "removeImage": {
+                    "type": "boolean",
+                    "description": "If the image should be removed from the post"
+                  }
+                },
+                "required": [
+                  "text"
+                ],
+                "example": {
+                  "text": "This is a post text"
+                }
               }
             },
             "multipart/form-data": {
@@ -586,7 +688,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errorMessage"
+                  "$ref": "#/components/schemas/error"
                 }
               }
             }
@@ -596,7 +698,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errorMessage"
+                  "$ref": "#/components/schemas/error"
                 }
               }
             }
@@ -606,7 +708,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errorMessage"
+                  "$ref": "#/components/schemas/error"
                 }
               }
             }
@@ -616,7 +718,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errorMessage"
+                  "$ref": "#/components/schemas/error"
                 }
               }
             }
@@ -626,7 +728,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errorMessage"
+                  "$ref": "#/components/schemas/error"
                 }
               }
             }
@@ -636,7 +738,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errorMessage"
+                  "$ref": "#/components/schemas/error"
                 }
               }
             }
@@ -648,31 +750,22 @@
           "posts"
         ],
         "summary": "Deletion of a post",
-        "description": "Delete the post with the given id",
+        "description": "Delete the post with the given id (and its comments)",
         "parameters": [
           {
             "$ref": "#/components/parameters/postIdParam"
           }
         ],
         "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "string",
-                  "description": "Post deletion message"
-                },
-                "example": "Post deleted"
-              }
-            }
+          "204": {
+            "description": "No Content"
           },
           "401": {
             "description": "Unauthorized",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errorMessage"
+                  "$ref": "#/components/schemas/error"
                 }
               }
             }
@@ -682,7 +775,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errorMessage"
+                  "$ref": "#/components/schemas/error"
                 }
               }
             }
@@ -692,7 +785,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errorMessage"
+                  "$ref": "#/components/schemas/error"
                 }
               }
             }
@@ -702,7 +795,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errorMessage"
+                  "$ref": "#/components/schemas/error"
                 }
               }
             }
@@ -710,7 +803,62 @@
         }
       }
     },
-    "/api/posts/{id}/comment": {
+    "/api/posts/{id}/comments": {
+      "get": {
+        "tags": [
+          "posts"
+        ],
+        "summary": "Find comments for a post",
+        "description": "Returns an array of some of the comments of the post specified in the path parameter, with a descending order (more recent first). Each comment also includes the author.\n",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/postIdParam"
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "description": "The maximum number of comments to retrieve.",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "before",
+            "description": "The date before which the comments must be retrieved.",
+            "schema": {
+              "type": "string",
+              "format": "date-time",
+              "example": "2022-10-12T09:43:15.103Z"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/comment"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error"
+                }
+              }
+            }
+          }
+        }
+      },
       "post": {
         "tags": [
           "posts"
@@ -732,16 +880,11 @@
                   "text": {
                     "type": "string",
                     "description": "Text content of the comment"
-                  },
-                  "authorId": {
-                    "type": "string",
-                    "description": "ID of the author of the comment"
                   }
                 }
               },
               "example": {
-                "text": "This is a comment",
-                "authorId": "e5268c386c9b17c39bd6a17d"
+                "text": "This is a comment"
               }
             }
           }
@@ -762,7 +905,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errorMessage"
+                  "$ref": "#/components/schemas/error"
                 }
               }
             }
@@ -772,7 +915,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errorMessage"
+                  "$ref": "#/components/schemas/error"
                 }
               }
             }
@@ -782,7 +925,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errorMessage"
+                  "$ref": "#/components/schemas/error"
                 }
               }
             }
@@ -809,10 +952,6 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "userId": {
-                    "type": "string",
-                    "description": "ID of the user"
-                  },
                   "like": {
                     "type": "number",
                     "description": "new like status of the post for the user (-1 dislike / 0 neutral / 1 like)",
@@ -827,7 +966,6 @@
                 }
               },
               "example": {
-                "userId": "e5268c386c9b17c39bd6a17d",
                 "like": 1
               }
             }
@@ -839,10 +977,8 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "string",
-                  "description": "Post like status update message"
-                },
-                "example": "Post like status updated"
+                  "$ref": "#/components/schemas/post"
+                }
               }
             }
           },
@@ -851,7 +987,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errorMessage"
+                  "$ref": "#/components/schemas/error"
                 }
               }
             }
@@ -861,7 +997,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errorMessage"
+                  "$ref": "#/components/schemas/error"
                 }
               }
             }
@@ -871,7 +1007,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errorMessage"
+                  "$ref": "#/components/schemas/error"
                 }
               }
             }
@@ -881,7 +1017,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/errorMessage"
+                  "$ref": "#/components/schemas/error"
                 }
               }
             }
@@ -916,6 +1052,42 @@
         "maxLength": 256,
         "description": "A text message describing an error",
         "example": "Error during the request processing"
+      },
+      "errorObject": {
+        "type": "object",
+        "description": "An error defined by a name and a message",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "The name of the error",
+            "example": "Error"
+          },
+          "message": {
+            "type": "string",
+            "maxLength": 256,
+            "description": "A text message describing the error",
+            "example": "Error during the request processing"
+          }
+        },
+        "example": {
+          "name": "Error",
+          "message": "Error during the request processing"
+        }
+      },
+      "error": {
+        "type": "object",
+        "description": "An error defined by a name and a message",
+        "properties": {
+          "error": {
+            "$ref": "#/components/schemas/errorObject"
+          }
+        },
+        "example": {
+          "error": {
+            "name": "Error",
+            "message": "Error during the request processing"
+          }
+        }
       },
       "user-credentials": {
         "type": "object",
@@ -1110,24 +1282,6 @@
           ]
         }
       },
-      "post-form": {
-        "type": "object",
-        "description": "data to use to create the post without image (object structure -> post-form schema)",
-        "properties": {
-          "text": {
-            "type": "string",
-            "description": "Content (text) of the post"
-          },
-          "authorId": {
-            "type": "string",
-            "description": "ID of the user that created the post"
-          }
-        },
-        "example": {
-          "text": "This is a post text",
-          "authorId": "e5268c386c9b17c39bd6a17d"
-        }
-      },
       "post-form-with-image": {
         "type": "object",
         "description": "data to use to create the post with image (object structure -> post-form-with-image schema)",
@@ -1136,10 +1290,6 @@
             "type": "string",
             "description": "Content (text) of the post"
           },
-          "authorId": {
-            "type": "string",
-            "description": "ID of the user that created the post"
-          },
           "imageAlt": {
             "type": "string",
             "description": "Description (alternative text) of the image (required if an image is provided)"
@@ -1147,7 +1297,6 @@
         },
         "example": {
           "text": "This is a post text",
-          "authorId": "e5268c386c9b17c39bd6a17d",
           "imageAlt": "This is the description of the image"
         }
       },
