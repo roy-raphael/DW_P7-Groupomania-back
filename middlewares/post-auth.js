@@ -6,10 +6,10 @@ function postAuthorize(req, res, next) {
     prisma.post.findUnique({ where: { id: req.params.id }})
     .then((post) => {
         if (!post) {
-            res.status(404).json({ message: 'No post found with this ID'})
+            return handleError(res, 404, new Error('No post found with this ID'));
         }
         else if (post.authorId !== req.auth.userId) {
-            res.status(403).json({ message: 'Unauthorized request'})
+            return handleError(res, 403, new Error('Unauthorized request'));
         }
         else {
             req.post = post;

@@ -510,7 +510,6 @@ export function modifyPost(req, res, next) {
  *        schema:
  *          $ref: "#/components/schemas/error"
  */
-// OUT: { message: String }
 export function deletePost(req, res, next) {
     if (req.post.imageUrl) {
         deleteImage(req.post.imageUrl);
@@ -726,7 +725,7 @@ export function likePost(req, res, next) {
     })
     .then(post => {
         if (! post) {
-            return res.status(404).json({ message: 'No post found with this ID'})
+            return handleError(res, 404, new Error('No post found with this ID'));
         }
         let likeConnect = [];
         let likeDisconnect = [];
