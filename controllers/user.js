@@ -370,22 +370,34 @@ export async function refresh(req, res, next) {
                 var user = {...refreshTokenData.user};
                 const userEmail = user.email;
                 delete user['password'];
+                const refreshTokenExpirationDate = refreshTokenData.expirationDate;
+                // Delete the token from the database, because it is being used (no matter if valid or not)
+                prisma.refreshToken.delete({ where: { id: refreshTokenId } })
+                .catch(error => console.error("Refresh token data could not be deleted from database : " + error));
                 try {
                     jwtUtils.verifyRefresh(receivedRefreshToken, userEmail);
                 } catch(error) {
-                    // If the token is expired : delete it from the database
-                    if (jwtUtils.isErrorTokenExpired(error)) {
-                        prisma.refreshToken.delete({ where: { id: refreshTokenId } })
-                        .catch(error => console.error("Refresh token data could not be deleted from database : " + error));
-                    }
                     // The token is invalid : return an authentication error
                     return handleError(res, 401, new Error("Refresh token invalid"));
                 }
-                // The refresh token is valid : return new access and refresh tokens
-                var accessToken = jwtUtils.sign({ userId: user.id }, userEmail);
-                const expirationTimestamp = Math.round(refreshTokenData.expirationDate.getTime()/1000);
-                var refreshToken = jwtUtils.signRefresh({ userId: user.id, refreshTokenId: refreshTokenData.id }, userEmail, expirationTimestamp);
-                res.status(200).json({ user, accessToken, refreshToken });
+                // The refresh token is valid : store a new refreshToken entry in the database (with the same expiration date),
+                // then return new access and refresh tokens
+                prisma.refreshToken.create({
+                    data: {
+                        expirationDate: refreshTokenExpirationDate,
+                        userId: user.id
+                    },
+                    select: { id: true }
+                })
+                .then(async newRefreshTokenData => {
+                    // Sign the access token and the refresh token
+                    var accessToken = jwtUtils.sign({ userId: user.id }, userEmail);
+                    const expirationTimestamp = Math.round(refreshTokenExpirationDate.getTime()/1000);
+                    var refreshToken = jwtUtils.signRefresh({ userId: user.id, refreshTokenId: newRefreshTokenData.id }, userEmail, expirationTimestamp);
+                    // Send the response
+                    res.status(200).json({ user, accessToken, refreshToken });
+                })
+                .catch(error => handleError(res, 500, error));
             } else {
                 // If the refresh token is not found on database : it has already been used (or it has expired)
                 const refreshTokenPayload = jwtUtils.decodePayload(receivedRefreshToken);
