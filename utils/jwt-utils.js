@@ -5,7 +5,7 @@ import process from './load-env.js';
 const jwtIssuer = process.env.JWT_ISSUER;
 const jwtAudience = process.env.JWT_AUDIENCE;
 const jwtAccessTokenExpiration = "10m";
-const jwtRefreshTokenDefaultExpirationInS = 1 * 24 * 60 * 60; // 1 day
+const jwtRefreshTokenDefaultExpirationInS = 14 * 24 * 60 * 60; // 2 weeks
 const jwtAlgorithm = "RS256";
 var privateKEY = '';
 var publicKEY = '';
